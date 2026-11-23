@@ -577,3 +577,24 @@ This replaces the #6 thread-forming screws into the corner blocks, which ran in 
   4 x M6 x 12 with fender washers of 16 OD or more.
 Rebuilt both hands of block, bracket and foot; no feature errors; overlap 0 in all pairs.
 The assembly file picks the new parts up when it is next opened.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, MEASURED: INSERT LENGTH AND BALANCE POINT -> feet tagged 2026-11-23j
+- M3 insert measures 6.35 long: it is the 6.4 one (94180A333). Block holes stand as built (i files).
+- Balance (Robert, sketch in the conversation): the fixture alone balances front to back about
+  4 mm in front of the flat back of the wing, i.e. z = -46. "A good bit of the weight is inside
+  the electronics section."
+  Whole lamp: 51 N total, of which frame + diffuser + printed parts are put at 10 N at z = +22
+  (ESTIMATE: 0.69 kg of acrylic, 0.27 kg of channel, the rest plastic). Centre of the whole lamp
+  z = -33, taken at mid-length, 318 above the table.
+- Tip angles with the feet as they were (50 back, 10 forward): 17.6 deg backward, 12.3 forward.
+  So the feet had over-corrected: forward was now the weak way, and forward is the fall that
+  lands on the diffuser. footFwd 10 -> 25: FORWARD 14.5 deg, BACKWARD 17.6 deg.
+  Same sum for a lamp standing as v1 does (frame front and back of the driver channel): 11.1
+  backward, 11.7 forward.
+- Toe: the 25 in front of the frame is full depth (9.6) at the root and tapers to 4 at the tip;
+  0.39 MPa sustained at the root with the bumper 8 in from the tip.
+- Sustained bending where the housing ends, now worked as a T section (sole + brace): 0.57 MPa.
+- Sole 199 long, 104.6 cm3 per foot. Both hands rebuilt, no errors, overlap 0.
+- Assembly views refreshed (check/assem_*.jpg).
+NOT CHECKED: balance point along the LENGTH (taken as the middle); the 10 N frame figure.

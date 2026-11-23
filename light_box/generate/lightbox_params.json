@@ -72,9 +72,8 @@
   "footLift": 6.0,
   "footBlockClr": 0.5,
   "footBack": 50.0,
-  "footFwd": 10.0,
+  "footFwd": 25.0,
   "footBraceEnd": 3.0,
-  "footLoadN": 25.0,
   "spacerLen": 60.0,
   "spacerShort": 0.5,
   "spacerCham": 0.8,
@@ -95,5 +94,11 @@
   "rimInR": 1.0,
   "insFlangeH": 1.0,
   "insHoleFinishD": 4.5,
-  "insLen": 6.4
+  "insLen": 6.4,
+  "footToeTip": 4.0,
+  "cgInset": 4.0,
+  "lampWeightN": 51.0,
+  "frameWeightN": 10.0,
+  "bumpIn": 8.0,
+  "bumpH": 3.0
 }

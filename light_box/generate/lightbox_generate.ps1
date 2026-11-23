@@ -494,6 +494,9 @@ public static class Gen {
         new double[] { ex + tp * a.nX, ez + tp * a.nZ }, new double[] { ex + fc * a.nX, ez + fc * a.nZ } }, y2 - 0.5, yTop + 0.5, false, "foot leg");
       PY(Rect(xIn, zRear, xo, zStep), yTop, yBot, false, "sole under the housing");
       PY(Rect(xIn, zStep - 0.5, xo, zFwd), yThin, yBot, false, "sole under the block");
+      // toe: in front of the frame nothing sits above the sole, so it is full depth at the root and tapers to the tip
+      double zToe = a.zTop + 0.8, tt = p("footToeTip");
+      PX(new double[][] { new double[] { yBot, zToe }, new double[] { yTop, zToe }, new double[] { yTop, zToe + 5 }, new double[] { yBot - tt, zFwd }, new double[] { yBot, zFwd } }, xIn, xo, false, "toe");
       // 45 deg gusset under the part of the leg that sits in the block seat, outside the bumper face of the block
       double gx = a.bumpX + 0.4, gz = a.zTop - (yThin - y2);
       PX(new double[][] { new double[] { y2 - 0.5, zLegTop - 0.5 }, new double[] { y2 - 0.5, a.zTop }, new double[] { y2, a.zTop }, new double[] { yThin + 0.5, gz }, new double[] { yThin + 0.5, zLegTop - 0.5 } },
@@ -509,10 +512,26 @@ public static class Gen {
         new double[] { y1, zW - 6 }, new double[] { y1, zW }, new double[] { yTop + 0.5, zW } },
         bx0, xo, false, "side brace");
       { double wt = xo - bx0, zh = -p("lightWingDepth"), hh = (yBot - yCut) + (y1 < yCut && zh > zC ? (yCut - y1) * (zh - zC) / (zW - 6 - zC) : 0);   // depth of web + sole where the housing ends
-        double span = (a.zTop - 5) - (zRear + 12), la = (a.zTop - 5) - (-p("lightSideFlat")), lb = span - la, W = p("footLoadN");
-        double Mb = W * la * lb / span, Iw = wt * hh * hh * hh / 12, sg = Mb * (hh / 2) / Iw, I0 = (xo - xIn) * Math.Pow(yBot - yTop, 3) / 12, sg0 = Mb * ((yBot - yTop) / 2) / I0;
-        log.AppendLine(String.Format("  foot span between bumpers {0:F0}; {1:F0} N per foot landing {2:F0} from the front one -> {3:F0} N.mm", span, W, la, Mb));
-        log.AppendLine(String.Format("  foot sustained bending: brace + sole {0:F0} deep x {1:F1} -> {2:F2} MPa (sole alone would be {3:F1} MPa)", hh, wt, sg, sg0));
+        // Balance: the fixture alone balances cgInset in front of the wing back (Robert, on a straightedge). The frame and
+        // diffuser pull the centre of gravity of the whole lamp forward. Bumpers sit bumpIn from each end of the sole.
+        double bi = p("bumpIn"), wFix = p("lampWeightN") - p("frameWeightN"), zFix = -(p("lightWingDepth") - p("cgInset")), zFrm = (a.zRearOut + a.zFront) / 2;
+        double zcg = (wFix * zFix + p("frameWeightN") * zFrm) / p("lampWeightN"), hcg = p("lightL") / 2 + yBot + p("bumpH");
+        double zBf = zFwd - bi, zBr = zRear + bi;
+        log.AppendLine(String.Format("  balance: fixture at z {0:F0}, frame at z {1:F0} -> whole lamp at z {2:F0}; height of centre {3:F0} above the table (taken at mid-length)", zFix, zFrm, zcg, hcg));
+        log.AppendLine(String.Format("  tips BACKWARD at {0:F1} deg ({1:F0} mm of stance behind the centre), FORWARD at {2:F1} deg ({3:F0} mm in front)",
+          Math.Atan2(zcg - zBr, hcg) * 180 / Math.PI, zcg - zBr, Math.Atan2(zBf - zcg, hcg) * 180 / Math.PI, zBf - zcg));
+        { double v1b = Math.Atan2(zcg + p("lightH"), p("lightL") / 2) * 180 / Math.PI, v1f = Math.Atan2(a.zFront - zcg, p("lightL") / 2) * 180 / Math.PI;
+          log.AppendLine(String.Format("  for comparison, standing on the frame front and the back of the driver channel as v1 does: {0:F1} deg backward, {1:F1} deg forward", v1b, v1f)); }
+        double span = zBf - zBr, la = zBf - zcg, lb = span - la, W = p("lampWeightN") / 2;
+        { double Rf = W * lb / span, toeArm = Math.Max(0, zBf - a.zTop), Zt = (xo - xIn) * Math.Pow(yBot - yTop, 2) / 6;
+          log.AppendLine(String.Format("  toe: front bumper carries {0:F0} N, {1:F0} mm in front of the block -> {2:F2} MPa sustained at the root ({3:F1} deep there)", Rf, toeArm, Rf * toeArm / Zt, yBot - yTop)); }
+        // Section where the housing ends (the brace is at its shallowest under load there): sole as flange, brace as web.
+        double Mb = W * la * lb / span, Mh = W * la / span * (zh - zBr);
+        double tf = yBot - yTop, bf = xo - xIn, hw = hh - tf, Af = bf * tf, Aw = wt * hw, yc = (Af * tf / 2 + Aw * (tf + hw / 2)) / (Af + Aw);
+        double It = bf * tf * tf * tf / 12 + Af * (yc - tf / 2) * (yc - tf / 2) + wt * hw * hw * hw / 12 + Aw * (tf + hw / 2 - yc) * (tf + hw / 2 - yc);
+        double sg = Mh * Math.Max(yc, hh - yc) / It, sg0 = Mb * (tf / 2) / (bf * tf * tf * tf / 12);
+        log.AppendLine(String.Format("  foot span between bumpers {0:F0}; {1:F0} N per foot landing {2:F0} from the front one -> {3:F0} N.mm at the load, {4:F0} where the housing ends", span, W, la, Mb, Mh));
+        log.AppendLine(String.Format("  foot sustained bending where the housing ends: sole + brace {0:F0} deep -> {1:F2} MPa (sole alone, at the load, would be {2:F1} MPa)", hh, sg, sg0));
         if (sg > 1.0) log.AppendLine("  !! sustained stress over 1 MPa: creep"); }
       log.AppendLine(String.Format("  M6 line of sight: tool axis crosses the brace at z {0:F0}; brace top held {1:F0} below the axis from z {2:F0} back to the tail", zLos, tR, zC));
       // the side screw-head relief carried through to the end
@@ -554,7 +573,7 @@ public static class Gen {
         Fil(p("insideR"), "inside corner of the foot leg", V(fc + 0.3, (y2 + yTop) / 2, fz));
         Fil(p("insideR"), "brace to sole", V(bx0, yTop, zC - 20));
         FilC(p("soleTopR"), "sole top edge, tail", V(xIn, yTop, zRear + 40));
-        FilC(p("soleTopR"), "sole top edge, front", V(xIn, yThin, zFwd - 12));
+        { double zt0 = a.zTop + 5.8, tt = p("footToeTip"); FilC(p("soleTopR"), "toe top edge", V(xIn, (yTop + yBot - tt) / 2, (zt0 + zFwd) / 2)); }
         Cham(p("bedCham"), "bed face chamfer", V(xIn + 15, yBot, zRear + 40));
       } else {
         // bed-face edges, chained along tangents; the small relief arc at the inside of the bend is left as it is
@@ -698,6 +717,7 @@ public static class Gen {
       log.AppendLine("assembly: saved " + ok + (e != 0 ? " err " + e : ""));
     }
     if (imgDir != "") {
+      try { ((ModelView)adoc.ActiveView).FrameState = (int)swWindowState_e.swWindowMaximized; } catch (Exception) { }   // a reopened assembly comes up in a small window
       foreach (string[] v in new string[][] { new string[] { "*Isometric", "7", "assem_iso.jpg" }, new string[] { "*Front", "1", "assem_front.jpg" }, new string[] { "*Back", "2", "assem_back.jpg" },
           new string[] { "*Right", "4", "assem_side.jpg" }, new string[] { "*Bottom", "6", "assem_bottom.jpg" } }) {
         adoc.ShowNamedView2(v[0], int.Parse(v[1])); adoc.ViewZoomtofit2(); adoc.GraphicsRedraw2();
