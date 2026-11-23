@@ -1,0 +1,382 @@
+LIGHT BOX v2 (for Robert's son) -- design notes
+Started 2026-11-23. Units: inches as measured, mm in brackets.
+
+PURPOSE
+Phototherapy light box (seasonal affective). A NICOR mid/high-bay LED fixture stood on its short end,
+with an extra diffuser panel in a frame in front of the lens so it can be looked at.
+v1 (Robert's own): prismatic fluorescent-fixture diffuser in an aluminium-angle frame, RTV-bonded,
+held to the light by four flat printed triangles (3D print/light_bracket.SLDPRT) pop-riveted to the
+light. v1's weakness: the brackets are the only structure; top and bottom angles are just bonded trim.
+v2 goals: sturdy enough to transport; corner reinforcement that covers the sharp extrusion ends;
+spacers in the channel so the diffuser is located mechanically, not only by the face bond; feet.
+
+THE LIGHT
+NICOR HBL4155UV4K, 155 W, 120-277 V, 4000 K, CRI 80+, date 09/2023. Steel housing, powder coat,
+frosted acrylic lens, vented driver channel on the back.
+Datasheet (reference/NICOR_HBL4_spec_sheet_2026-03-16.pdf, page 3), HBL4105 and HBL4155 share a body:
+  Length 23.8 (605)   Width 13.0 (330)   Height 3.6 (92)
+That is the whole drawing: an envelope with L/W/H only. No side profile, no hole positions, no weight.
+Anything finer has to be measured off the fixture.
+
+THE NEW DIFFUSER (Robert's measurements)
+Pre-cut sheet 24 x 13 nominal, about 0.030 undersize -> ~23.97 x 12.97 (608.8 x 329.4).
+Thickness 0.114 measured (2.90), nominal 1/8.
+
+THE CHANNEL (Robert's sketch)
+Aluminium C-channel sold as 1/2 x 1/2 x 1/16.
+  outside width 0.644 (16.36)   leg height 0.500 (12.70)
+  slot width    0.507 (12.88)   floor 0.062 (1.57)   -> slot depth 0.438 (11.13)
+  (0.644 - 0.507 leaves 0.0685 per leg, a little over 1/16.)
+The diffuser is 2.90 thick in a 12.88 slot: 9.98 of slack, hence the spacers.
+
+V1 BRACKET, measured from 3D print/light_bracket.STL
+Flat triangle 61.1 x 63.5, 7.62 (0.300) thick, three countersunk holes: two about 38 apart on the
+frame side, one about 48 away on the light side. Flat, so in v1 the frame's side face and the light's
+side face are in one plane.
+
+CONSEQUENCE FOR V2
+Frame outside = diffuser + 2 x (edge gap + channel floor). With a 1.5 edge gap for RTV:
+  about 614.9 x 335.6, against the light's 605 x 330.
+So the v2 frame stands proud of the light by ~2.8 per side and ~5 per end. A flat bracket no longer
+lies on both; the mounts need a step, and the frame (not the light) would touch the table first
+unless feet set the base plane.
+
+PRINTING
+Bambu X1C (256 mm bed), Bambu PETG-CF. Channels cut on the chop saw to lengths from the design.
+
+OPEN (needs the fixture measured, or Robert's call) -- see conversation 2026-11-23
+- side-wall profile of the light where mounts attach; actual L and W
+- wanted gap between lens and diffuser
+- fastener to the light (rivets again, or screws so the frame comes off)
+- how warm the housing side runs after an hour
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, second pass (Robert's replies)
+
+DIFFUSER MATERIAL
+Canal Plastics "Frosted Satin Ice" acrylic, custom size, 1/8 (0.118 / 3.0 mm nominal; 0.114 measured).
+
+WHERE THE SHEET SITS
+Against the inside of the channel's FRONT leg, as in v1 (bonded on the front face). The ~10 mm of
+slot behind it is filled by printed spacers and by the corner tongues, so the sheet is trapped
+mechanically front and back.
+
+ADHESIVE (Claude's judgment; Robert proposed standard epoxy)
+Acrylic grows ~70 ppm/K, aluminium 23. Over 609 mm that is 0.029 mm/K of mismatch.
+If the sheet runs 20 K warm and the frame 10 K: ~1170 microstrain, ~3.5 MPa in the sheet if a rigid
+bond holds it all round. Rough buckling stress for a 2.9 mm sheet 329 wide with held edges: ~2 MPa.
+So a full-perimeter rigid epoxy bond is likely to make the sheet bow when warm. The bond itself would
+survive (about 1 MPa average shear on a 10 mm land), so this is about flatness, not breakage.
+Therefore: epoxy for printed corner tongues into the aluminium (that is the structure);
+silicone (a thin smear, or dabs) between sheet and front leg, only to stop rattle and dust.
+Not measured: actual diffuser and frame temperatures. v1 would tell: its sheet temperature after an
+hour is the number to take.
+
+EDGE ALLOWANCE
+No glue gap. 1.0 mm per end on length, 0.75 per side on width (expansion ~0.45 / 0.25 worst case,
+rest is cut tolerance). Frame outside becomes ~613.9 x 334.0 (was 614.9 x 335.6 with the RTV gap).
+
+FASTENING TO THE LIGHT
+Pop rivets, as v1. Robert likes them, and a 1/8 rivet drills out in a minute, which is repair enough.
+Expected accident is a fall off a table: the frame stands proud of the light all round, so the
+printed corners land first and act as bumpers.
+
+CHANNEL SLOT
+Nominal 0.500; caliper readings don't close (walls read 0.062 everywhere), slot may be off by up to
+0.020. Slot width is the only dimension that matters. Settled by print, not by caliper:
+  lb_fit_gauge (stl/lb_fit_gauge_2026-11-23.STL), 100 x 24 x 10 mm.
+  Bar steps, handle end to tip: 13.1, 12.9, 12.7, 12.5, 12.3 wide -> try in the channel slot.
+  Notches: marked (+y, small hole) edge 3.0 then 3.1; other edge 3.2 then 3.3 -> try on the sheet edge.
+Print it flat in the same PETG-CF and settings as the real parts, so the answer includes the printer.
+The tongues will carry crush ribs as well, so the fit survives variation along the extrusion.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, third pass
+
+CORRECTION: the frame is NOT flush to the light. Claude misread the v1 photos. There is a deliberate
+air gap between the lamp's own lens and the added diffuser, and the diffusion depends on it. v1's gap
+was probably the smallest that gave acceptable diffusion. v2 keeps the same gap (new sheet diffuses
+better, and that spacing is mechanically manageable). Value to be measured off v1.
+The v1 triangle spans that gap: two holes on the frame angle, the third ~48 mm back on the light's
+side wall, placed as far back as possible to stay clear of the LED panel. Drilling there is blind.
+
+THREADED INSERTS on the back of the light (visible in reference/a7cfc820-image.jpg): factory rivet
+nuts, presumably for the surface-mount / pendant kits. Unused in v1. Candidates for v2:
+feet and a carry handle with no drilling at all; possibly the frame mounts too, if their positions
+allow an arm round the side. Positions and thread to be measured.
+
+TO MEASURE (Robert, when back at the hardware)
+1. gap: lamp lens face to back of v1 diffuser (or to the back of the v1 frame angle)
+2. side wall of the light: height of the flat, and where the v1 rivet sits on it (from front edge
+   and from the end of the light)
+3. back inserts: thread, and each one's position from the bottom end and from one side edge
+4. actual L and W of the housing
+5. if easy: diffuser and frame temperature on v1 after an hour
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, the new unit (reference/new_unit_label_300e1ad9.jpg)
+NICOR HBL4155UV5K: 155 W, 5000 K (v1 is 4000 K), date 08/2024, lot 176972.
+Same datasheet row as v1's HBL4155UV4K, so the same nominal body: 605 x 330 x 92.
+But v1 is "Luminaire A, made in Malaysia" (09/2023) and this one "Luminaire B, made in Vietnam":
+a different factory, so sheet-metal details (insert positions, side-wall flat, screw heads) may
+differ. Take every measurement that locates a part on the housing from THIS unit, not from v1.
+Only the lens-to-diffuser gap comes from v1.
+Back inserts: M6.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, photos of the new unit (reference/new_unit_side_*.jpg, new_unit_front_*.jpg)
+
+- The side wall already has a FACTORY HOLE. That is where v1's rivet went; nothing was drilled blind.
+  No drilling on v2 either: no chips left inside the enclosure.
+- Inside: three LED strips, set back up to ~1 in behind the lamp's own frosted lens.
+- Side profile (from the photo, not measured): a flat side face at the front, then an angled face
+  toward the back. An M6 insert sits on that angled/back face right near the END of the light,
+  close to the side. v1's rear photo shows the same at the other end. So there appears to be an
+  insert near each of the four corners, plus two on the driver channel.
+
+REVISED MOUNTING (Claude's judgment, pending measurements)
+Earlier note said the inserts were poorly placed for the frame mounts. With one near each corner
+that is wrong. Plan: each printed corner piece runs back along the flat side face, hooks round onto
+the angled face and bolts to the corner insert with one M6 screw. Bolted, removable, no drilling,
+and the leg bears on the side wall along its length instead of hanging from one rivet.
+The factory side holes stay available for riveted mid-span brackets (v1 style, with a step), as a
+second set of supports and for the look. Decide after the corners exist.
+Feet: on the bottom two corner pieces; handle: the two driver-channel inserts.
+
+TO MEASURE ON THE NEW UNIT (replaces the earlier list, except the gap, which comes from v1)
+a. An end-on photo, looking straight along the length at one end, with a ruler across it. The whole
+   side profile can be traced from that.
+b. Flat side face: height from the front edge to the bend; angle or run of the angled face.
+c. Corner inserts: distance from the end of the light and from the bend; same at all four corners?
+d. Factory side holes: how many per side, diameter, distance from the front edge and from the ends.
+e. Driver-channel inserts: spacing, and distance from the bottom end.
+f. Actual length and width of the housing.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, end profile of the new unit, Robert's caliper sketch
+(reference/new_unit_profile_sketch_bd99f46b.jpg). Fuzzy by bend radii and eyeballed alignment.
+
+As Claude reads it (front = lens face; depth measured back from it; symmetric about the centre):
+  side flat, front edge to the bend              1.160  (29.5)
+  angled face                                    1.304  (33.1)   <- across the width, or along the slope?
+  wing back flat, angled face to driver channel  3.550  (90.2)
+  driver channel stands behind the wing back by  1.738  (44.1)
+  driver channel width                           3.92   (99.6)
+
+CLOSURE CHECK against the datasheet (13.0 wide, 3.62 deep)
+  width if 1.304 is across the width: 2 x (1.304 + 3.550) + 3.92 = 13.63   (0.63 over)
+  depth: wing back should sit 3.62 - 1.738 = 1.88 (47.8) behind the front, so the angled face
+         rises 1.88 - 1.160 = 0.72 (18.4).
+  if 1.304 is along the slope with that rise: run 1.09, width 13.19 (0.19 over), slope ~33 deg.
+  if 1.304 is across the width: slope ~29 deg, and the width does not close.
+Neither closes exactly. Two direct readings settle it whichever way 1.304 was taken:
+  - overall width of the housing, side flat to side flat
+  - depth from the front face to the wing back flat
+Firm enough to use now: side flat 29.5 mm.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, profile settled (reference/new_unit_end_on_ruler_37cef51b.jpg)
+
+Correction from Robert: side flat is 1.180 (30.0), not 1.160.
+End-on photo with a 12 in rule across the end: outside width reads ~13.1 in by pixel scale
+(about 140 px/in, eyeballed, +/- 0.1). So the housing is 13.0-13.1 wide as the datasheet says, and
+the 1.304 was taken ALONG THE SLOPE. Claude's "0.63 over" came from reading it as a width run; that
+reading is dropped. Wing depth off the same photo ~1.9 in, agreeing with 3.62 - 1.738 = 1.88.
+
+ADOPTED PROFILE (mm; in lightbox_params.json as light*)
+  width 330 (photo suggests up to 332)      overall depth 92
+  side flat 30.0                             wing back flat at depth 47.9
+  angled face: 33.1 long, rises 17.9 over a run of 27.8  -> 32.8 deg off the back plane
+  wing back flat 90.2 wide, driver channel 99.6 wide standing 44.1 further back
+  closure: 2 x (27.8 + 90.2) + 99.6 = 335.6, 2-3 mm per side over. Good for sheet metal measured
+  in pieces (Robert's judgment, accepted).
+Design consequence: the corner leg is located by the side flat and the front edge only; the M6
+hole on the angled face gets a slot so +/- 2 mm in the profile does not matter.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, corner insert on the new unit (reference/new_unit_insert_*.jpg)
+
+Robert's readings: insert flange dia 0.484 (12.3); end of housing to flange edge 0.574;
+flange edge to the bend ~0.576 (eyeballed past the bend radius). "Call it equidistant."
+  -> insert centre 0.816 (20.7) from the END of the housing
+  -> insert centre 0.818 (20.8) up the angled face from the side-flat bend
+     (the angled face is 33.1 long, so ~12.3 remains above the centre to the upper bend; the photo
+      agrees: the bend line sits just above the flange, the two screws are beyond it on the wing back)
+In the light's frame, with the 32.8 deg slope: centre is 41.3 behind the front face and 17.5 in
+from the side plane; screw axis normal to the angled face. M6.
+Relative to the frame (613.9 long vs 605): centre is ~25.2 in from the frame's outer end.
+(The 0.859 on the caliper display in the first photo is not one of the reported numbers; unused.)
+
+STILL OPEN
+- lens-to-diffuser gap, from v1
+- screw heads on the side flat near each end (seen in new_unit_side photo): position and head size,
+  so the corner leg can be relieved over them
+- fit gauge result
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, FIRST BUILD of the corner parts
+
+NEW MEASUREMENTS
+- Gap, v1: front edge of the lamp to the back surface of the diffuser = 1.000 in (25.4). Kept for v2.
+- Bevel (angled face), new unit, settled by two caliper photos in reference/:
+    across the width (horizontal)  1.322 here, 1.304 in the first sketch (Robert: the 1.304 was the
+                                   more careful reading)
+    along the slope                1.533 (38.9)
+  So the 1.304 WAS a horizontal reading. Claude had flipped to "along the slope" to make the overall
+  width close; that was wrong. Bevel: run ~33.2, length 38.9, rise ~20.2, about 31 deg off the back
+  plane; wing back flat ~50.2 behind the front. (Params carry 38.9 and 50.1; the 0.3 mm between the
+  two horizontal readings is inside the M6 slot.)
+  The piecewise widths still do not sum to the 13.1 in overall seen on the rule (they give ~13.6);
+  either the 3.550 or the 3.92 overlaps something. It does not matter to these parts: they use only
+  the side flat, the bevel and the insert.
+- Insert centre taken as 20.8 up the bevel from the SIDE-FLAT bend (18.1 from the upper bend).
+  If Robert measured to the other bend the centre moves 2.7; the slot is +/-3 to cover either.
+- Corner detail photo (new_unit_corner_detail): pan-head screw on the side flat within ~10 mm of the
+  end; end cap laps over the housing. Position not measured; the bracket is relieved over it.
+
+WHY TWO PARTS PER CORNER
+A one-piece corner with a leg hooked onto the bevel cannot go on: the bevels face outward-and-back
+on both sides, so four hooks on a rigid frame would have to spread ~18 mm each to pass the side
+flats. So each corner is a BLOCK (part of the frame) and a BRACKET (bolted to the light), joined by
+two screws from the side. The frame comes off by undoing those eight screws, or the four M6.
+
+CORNER BLOCK  lb_corner_block_A / _B   (A and B are mirror images; diagonal corners share a hand)
+- L-shaped, 10.9 x 9.75 section, with a 30 mm tongue into each channel slot. Arms: 45 mm down the
+  side, 20 mm along the end. The channels are square-cut and butt against the arms.
+- The diffuser's corner rests on the block and tongues (z 25.25) inside a rim that stands 1.5 proud
+  of the channel faces all round, with a 3 mm chamfer on the outside corner: this is the bumper.
+- No printed lip over the FRONT of the diffuser at the corner. The channel front legs hold the sheet
+  from 20 / 45 mm out. (A lip would need support material in a 3 mm slot.)
+- Flat seat on the side face for the bracket, shouldered at both ends so the shoulders, not the
+  screws, take load along the length. Two pilot holes, 2.7 dia x 10 deep, modelled undersize.
+- Prints flat on its back (the face toward the lamp), rim up, no supports. 14.2 cm3.
+
+BRACKET  lb_bracket_A / _B
+- Constant profile, 26 wide: 7 mm leg up the side flat, 1.5 joggle out to the frame, 7 mm pad 36 long
+  on the bevel. Leg crosses 15.5 mm of air between the lamp front and the block.
+- M6: 7.0 x 13 slot (+/-3 along the slope), 17 dia x 1.5 relief for the insert flange.
+  Use an M6 button head with a washer (12 mm or larger).
+- Screw-head relief: 7 mm at the end-of-housing side, 4 deep, leaving 3 mm of leg over it.
+- Two 3.9 clearance holes 16 apart for the screws into the block.
+- Prints standing on its edge (the y = -33.7 face down, relief end up), so every layer carries the
+  whole profile: the strong direction for the leg and the hook. No supports. 16.8 cm3.
+- Leg check: 100 N sideways at the frame on one bracket, 20.4 mm arm -> 9.6 MPa, 0.13 mm.
+  PETG-CF is good for roughly 40-50 MPa in-plane, so one corner alone takes ~400 N. E = 3000 MPa is
+  an assumed figure.
+
+FASTENERS (Claude's choice, open to what is on the bench)
+- 4 x M6 button head, ~12 long under the head (7 pad - 1.5 relief + insert engagement), washers.
+- 8 x #6 (3.5 mm) thread-forming screws for plastic, ~16 long (7 through the bracket + 9 in the block).
+  Pilots are modelled 2.7; finish with the drill and stop bushing for the screw chosen.
+
+CUT LENGTHS (lightW 331, lightL 605; frame outside 334.0 x 613.9)
+  side channels 523.9 mm (20.63 in) x 2        end channels 294.0 mm (11.58 in) x 2
+  DO NOT CUT YET: both depend on the measured overall length and width of this housing, which are
+  still datasheet / photo figures. 1 mm long is harmless (it closes the edge allowance); short opens
+  a gap at the butt joint.
+
+CHECKS RUN
+- All four parts: one body, no feature errors.
+- Mesh overlap, hand A parts against the mock corner (housing profile, diffuser, both channel
+  stubs) and against each other: 0 mm3 in all three pairs. The checker was confirmed to see a clash
+  by moving the bracket 2 mm into the housing (1857 mm3) and the block 1 mm inward (75 mm3).
+- Sections in check/sections.png.
+
+NOT CHECKED
+- Hand B against a mock (it is the mirror; only A was run).
+- Whether all four corners of the housing really match (insert position, screw head, lap joints).
+- The tongue fit: slot width is still the provisional 12.9; set chanSlotW from the fit gauge and
+  rebuild the blocks before printing them for real.
+- The side-flat screw head's actual position and height against the relief.
+- Whether the end cap's lap or screws stand proud of the side plane near the end.
+- Nothing sliced or printed. No feet, handle or mid-span spacers yet.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, side-flat screw head (new unit)
+Head dia 0.315 (8.0). Head edge to the front surface of the light 0.488 (12.4)
+  -> head centre 16.4 behind the front; head spans z -12.4 .. -20.4.
+Current relief spans z -28 .. -2, 4 deep: covers it with room to spare.
+Still unknown: distance from the END of the housing (relief covers 7.7 .. 14.7 from the end, so the
+head centre must be within ~10.7 of the end), and head height (relief is 4 deep).
+Next rebuild: narrow the relief to about z -24 .. -9 for more bearing land, once the end distance
+is known.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, side-flat screw head, complete (reference/new_unit_side_screw_59645335.jpg)
+Head edge 0.110 (2.8) from the outer lap on the end; dia 8.0; height 0.098 (2.5); edge 12.4 behind the front.
+  -> centre 6.8 from the end, 16.4 behind the front. The bracket starts 7.7 from the end, so only
+     ~3 mm of the head is under it.
+Relief narrowed to fit: 4.5 along the length, 9.4..23.4 behind the front, 3.2 deep (was 7 x 26 x 4).
+The generator now logs the four margins and warns if any is too tight.
+Brackets rebuilt, clash check still 0 in all pairs. Print files: stl/lb_bracket_A_2026-11-23b.STL and _B
+(the earlier bracket STLs of the same day were removed as superseded).
+
+2026-11-23, END-FACE screw (reference/new_unit_end_screw_184efce7.jpg)
+A pan-head screw on the end cap near the corner. Robert: it is the furthest-out feature of the
+housing in the end direction (so the lowest point when the light stands on end). Not measured;
+assume the same head, ~2.5 proud of the end plane.
+Current parts do not touch it: the bracket stops 7.7 short of the end, and the block sits in front
+of the lamp (z >= 15.5), wrapping the FRAME corner, not the housing corner.
+Standing on end as built: frame end is 4.5 beyond the housing end and the block rim 6.0, so the two
+bottom blocks touch the table first, 3.5 clear of that screw head. The weight of the light then
+goes through the bottom brackets into the block seats (shoulders take it, not the screws).
+For the FEET: they must reach past the block rim (> 6.0 beyond the housing end) or sit under the
+blocks, and anything that wraps the housing end needs a relief for this head.
+End-face screw head measured: 0.110 (2.8) proud of the end plane, same screw as the side one.
+Standing on end: block rim is 3.2 clear of it, the channel ends 1.7 clear.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, housing size measured (new unit); all parts rebuilt -> print files tagged 2026-11-23c
+
+Width, sheet metal to sheet metal: 13.00 in within 0.020 (330.2). Was 331 from the ruler photo.
+Length: about 23 13/16 in (604.8). Datasheet said 605.
+Side screw heads stand outside that width on both sides (2.5 each; the bracket relief covers them).
+TOP END: a plastic knockout plug sticks out of the end of the driver channel. That is why Robert
+chose that end as the top (reference/new_unit_top_end_plug_5f1c7457.jpg). Feet go on the other end.
+
+Effect: frame stands 1.92 proud per side (was 1.52), 4.57 per end. Only the bracket's joggle changed
+(1.52 -> 1.92). The block is the same shape. Clash check 0 in all three pairs.
+
+CORRECTION ON CUT LENGTHS
+Earlier note said the cut lengths wait on the housing's measured size. Wrong: the frame is sized
+from the DIFFUSER plus the edge allowance, so the housing size only sets how far the frame stands
+proud. Lengths are unchanged:
+  side channels 523.9 mm (20.63 in) x 2        end channels 294.0 mm (11.58 in) x 2
+What they do depend on is the sheet's real size, so far "24 x 13, about 0.030 under". The edge
+allowance (1.0 per end, 0.75 per side) covers a sheet anywhere from nominal to 0.06 in under.
+Measure the sheet before cutting if convenient; otherwise these are safe to cut.
+If the arm lengths (45 side, 20 end) or the allowances change, the cut lengths change with them.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, SLOP PASS -> print files tagged 2026-11-23d
+Robert: nobody measures a sheet-metal fabrication or a Home Depot extrusion to 10 thou; the design
+should have slop and overlap in it. Went through every fit and loosened the ones that were chasing
+a measurement:
+
+  fit                               was                     now
+  tongue in the channel slot        sized to a guessed      sized to the NOMINAL 12.70 slot: 9.55 thick.
+                                    12.9 slot (0.25 total)  Fits any slot from 0.500 up; in a 0.520
+                                                            slot it is 0.5 loose and the epoxy fills it.
+  leg against the side flat         zero clearance, both    0.4 air per side. The M6 seats the pad on
+                                    sides (a clamp across   the bevel; the leg floats. Housing can be
+                                    the housing width)      0.8 wider than measured.
+  bracket in its seat on the block  0.2 per end             0.3 per end
+  side screw head relief            1.4 along, 0.7 deep     1.9 along, 1.2 deep (incl. the 0.4 air)
+  M6 slot                           +/-3 along the slope    unchanged; 7.0 wide for a 6.0 screw
+  diffuser edge allowance           1.0 / 0.75 per side     unchanged
+
+Leg is now 6.6 thick where it faces the side flat (7.0 less the 0.4), so the knock figure is nearer
+11 MPa than 9.6; the log still prints the 7.0 number.
+Consequence: the FIT GAUGE is now a sanity check, not a gate. It only matters if a step NARROWER
+than 12.7 is the one that fits, i.e. the slot is under nominal.
+Clash check 0 in all three pairs after the change.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, FIT GAUGE RESULT -> print files tagged 2026-11-23e
+On all four exposed cut ends the gauge goes in up to but not including the widest step:
+12.9 goes, 13.1 does not. Slot is 12.9 to 13.1 as printed-part fit (agrees with the 0.507 caliper reading).
+Robert: the die is probably accurate; what varies is after it, so the legs are not perfectly flat
+or square to the web. Only the cut ends were tried, which is where the tongues go.
+chanSlotW set to the measured 12.9 (was nominal 12.7, per the measured-value-plus-margin rule in
+cad/CLAUDE.md). Tongue 9.75 thick; tongue + 2.90 sheet = 12.65, so 0.25 to 0.45 of clearance for
+leg waviness and epoxy. All parts rebuilt; clash check 0 in all three pairs.
