@@ -64,5 +64,7 @@
   "headH": 2.5,
   "headFromEnd": 6.8,
   "headBack": 16.4,
-  "sideClr": 0.4
+  "sideClr": 0.4,
+  "cornerRelR": 1.5,
+  "cornerRelBack": 0.6
 }

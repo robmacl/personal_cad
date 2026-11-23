@@ -347,11 +347,27 @@ public static class Gen {
     if (sc > a.jog - 0.3) log.AppendLine("  !! side clearance leaves no joggle");
     double ex = lp * a.dX, ez = -sf + lp * a.dZ;                      // far end of the pad on the angled face
     double ox = tp * a.nX, oz = -sf + tp * a.nZ;                      // pad outer line passes through here, direction d
-    double s = (t - ox) / a.dX, zOut = oz + s * a.dZ;                 // where it meets the outer face of the leg, x = t
-    PY(new double[][] {
-      new double[] { sc, -sf + sc * a.dZ / a.dX }, new double[] { sc, zJ + sc }, new double[] { a.jog, zJ + a.jog }, new double[] { a.jog, a.zTop },
-      new double[] { a.jog + t, a.zTop }, new double[] { a.jog + t, zJ + a.jog }, new double[] { t, zJ }, new double[] { t, zOut },
-      new double[] { ex + tp * a.nX, ez + tp * a.nZ }, new double[] { ex, ez } },
+        // Inside corner at the bend: a round relief, not a sharp notch (the first print cracked from the sharp corner
+    // when the angle was opened by hand). It also keeps the corner off the radius of the sheet-metal bend.
+    double rr = p("cornerRelR"), kb = p("cornerRelBack");
+    double p0x = sc, p0z = -sf + sc * a.dZ / a.dX;
+    double bl = Math.Sqrt(a.dX * a.dX + (1 + a.dZ) * (1 + a.dZ)), bX = a.dX / bl, bZ = (1 + a.dZ) / bl;   // bisector, pointing into the housing
+    double crx = p0x - kb * bX, crz = p0z - kb * bZ, db = bZ;                                             // relief centre, inside the plastic; db = d.b = u.b
+    double sm = -kb * db + Math.Sqrt(kb * kb * db * db - kb * kb + rr * rr);                              // mouth: this far along each face from the corner
+    double aX = p0x + sm * a.dX - crx, aZ = p0z + sm * a.dZ - crz;
+    double wX = -bZ, wZ = bX; if (aX * wX + aZ * wZ < 0) { wX = -wX; wZ = -wZ; }   // so the arc runs from the pad face round to the leg face
+    double phi = Math.Acos(Math.Max(-1, Math.Min(1, -(aX * bX + aZ * bZ) / rr)));
+    List<double[]> prof = new List<double[]>();
+    int ns = 14;
+    for (int i = 0; i <= ns; i++) { double th = -phi + 2 * phi * i / ns; prof.Add(new double[] { crx + rr * (-Math.Cos(th) * bX - Math.Sin(th) * wX), crz + rr * (-Math.Cos(th) * bZ - Math.Sin(th) * wZ) }); }
+    double xo = a.jog + t, so = (xo - ox) / a.dX, zO2 = oz + so * a.dZ;   // leg outer face runs straight down to the pad: no outside joggle, a thicker leg
+    prof.Add(new double[] { sc, zJ + sc }); prof.Add(new double[] { a.jog, zJ + a.jog }); prof.Add(new double[] { a.jog, a.zTop });
+    prof.Add(new double[] { xo, a.zTop }); prof.Add(new double[] { xo, zO2 });
+    prof.Add(new double[] { ex + tp * a.nX, ez + tp * a.nZ }); prof.Add(new double[] { ex, ez });
+    { double diag = Math.Sqrt((xo - p0x) * (xo - p0x) + (zO2 - p0z) * (zO2 - p0z));
+      log.AppendLine(String.Format("  corner relief: r {0:F1}, mouth {1:F2} along each face, {2:F2} deep; plastic left across the corner about {3:F1}", rr, sm, kb + rr, diag - kb - rr));
+      if (diag - kb - rr < 5.5) log.AppendLine("  !! under 5.5 mm of plastic across the bend"); }
+    PY(prof.ToArray(),
       y1, y2, false, "leg and pad");
     // relief over the sheet-metal screw head on the side flat near the end of the housing
     PX(Rect(y2 - p("relLen"), -p("relZfar"), y2 + 1, -p("relZnear")), -1, sc + p("relDepth"), true, "screw head relief");

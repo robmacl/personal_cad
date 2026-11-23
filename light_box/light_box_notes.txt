@@ -380,3 +380,28 @@ or square to the web. Only the cut ends were tried, which is where the tongues g
 chanSlotW set to the measured 12.9 (was nominal 12.7, per the measured-value-plus-margin rule in
 cad/CLAUDE.md). Tongue 9.75 thick; tongue + 2.90 sheet = 12.65, so 0.25 to 0.45 of clearance for
 leg waviness and epoxy. All parts rebuilt; clash check 0 in all three pairs.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, FIRST PRINT (bracket + block, PETG-CF, Bambu standard profile) -> brackets tagged 2026-11-23f
+Robert: bracket fits the light decently. Bending it by hand (opening the angle between leg and pad)
+cracked it at the inside corner of the bend. Printed on edge as intended, so the crack ran through
+the walls, not between layers: the orientation was right, the corner was wrong.
+Cause (Claude's): the inside corner was modelled dead sharp. Sharp re-entrant corner + a notch-
+sensitive filled material + the default 2 walls over sparse infill.
+Change:
+- Round relief at the inside corner, r 1.5, centre 0.6 inside the plastic (cornerRelR, cornerRelBack).
+  A plain fillet was tried on paper first: it adds material where the sheet-metal bend radius sits
+  and has ~0 clearance for any bend radius under about 1.6, so the relief goes the other way, into
+  the bracket. It also means the unknown bend radius no longer matters.
+- Leg outer face now runs straight down from the frame to the pad (no joggle on the outside):
+  leg 8.5 thick below the frame, about 6.9 of plastic left across the corner. 18.9 cm3.
+- Pad thickness, M6 slot, screw holes, head relief: unchanged. Same M6 screw length.
+- Both hands rebuilt, one body, no errors; clash check 0 in all three pairs. Blocks unchanged (e).
+Print advice: 4 or more walls (or 100% infill; it is 19 cm3). Plain PETG is the better material
+here (Robert's suggestion): tougher, better layer bond, and the stiffness of CF is not needed.
+PAHT-CF not needed. Housing temperature at the bracket: Robert measuring; hand-holdable.
+NOT CHECKED: the new bracket has not been printed or bent. Bend radius of the housing not measured.
+
+CUT LIST (unchanged; set by the diffuser 608.8 x 329.4, not the housing)
+  side channels 523.9 mm (20.63 in) x 2      end channels 294.0 mm (11.58 in) x 2
+  Check the sheet first: should read 23.97 x 12.97 in. Cut a hair long rather than short.
