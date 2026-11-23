@@ -483,3 +483,30 @@ behind, webs round the edge.
   thermal mismatch (acrylic 70 ppm/K against aluminium 23).
 NOT CHECKED: the spacer in a real channel with the sheet (same section as the tongue, which has not
 been tried either; only the gauge has). Sheet clearance in the slot is 0.25 to 0.45.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, CORNERS, LOOSE WEB, M6 ACCESS -> brackets tagged 2026-11-23g, feet 2026-11-23c
+Robert, on the foot STL: one angled web does not connect at one end; generous radius on the foot
+corners; some radius on nearly every corner, an aesthetic radius on the big visible ones (compare
+his v1 light_bracket: flat plate, ~6 mm plan corners, small edge round); inside corners for stress;
+about 1 mm chamfer on the bed face; straight line of sight to the M6 head.
+- Loose web: the tail rib. Its tall end stood free behind the housing wing. Removed; the side brace
+  does that job. (Claude took "the web that does not connect" to be this one.)
+- M6 access: the side brace crossed the line a driver takes to the M6 (normal to the angled face).
+  The brace now drops steeply behind the leg and runs low to the tail, 9 mm below the tool axis
+  from z -55 back (toolR). Brace + sole is 30 deep where the housing ends: 0.79 MPa sustained at
+  25.6 N per foot (was 0.43 with the tall brace; the generator warns above 1.0).
+- Rule used for corners: edges that stand vertical in the print get radii; corners that touch the
+  bed get 45 deg chamfers, because a round tangent to the bed is an overhang.
+  FOOT (prints sole down): sole plan corners R10 tail, R8 front; sole top edge R2; bed face
+  chamfer 1.0; brace kink R12; leg top, pad end and brace top corners R4; inside corner of the foot
+  leg and the brace-to-sole corner R2.5.
+  BRACKET (prints on its y = -33.7 face): outside of the bend R5 (6.1 of plastic left across the
+  bend), leg top and pad end outer edges R3, inner edges R1, top-face edge R1; the four plan
+  corners are 4 mm CHAMFERS, not rounds, because two of them sit on the bed and the pair should
+  match; bed-face chamfer 0.6.
+- Foot leg inner face moved from 2.3 to 1.5 off the side plane to line up with the brace.
+- Corner blocks and spacers NOT rounded yet (blocks still the e files).
+CHECKED: four parts, one body each, no feature errors; overlap 0 for bracket A and foot A against
+the mock corner and the block. 93 cm3 per foot, 18.5 per bracket.
+NOT CHECKED: the tool line against a real driver or the thumb screw; nothing sliced or printed.

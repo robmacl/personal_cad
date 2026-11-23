@@ -261,6 +261,58 @@ public static class Gen {
     return f;
   }
 
+  // Find an edge or face by geometry (picking by coordinates goes through the view and misses hidden ones).
+  static bool Pick(double[] q, bool face, bool append, int mark, string name) {
+    object[] bodies = (object[])((PartDoc)doc).GetBodies2((int)swBodyType_e.swSolidBody, true);
+    double x = sgn * q[0] * MM, y = q[1] * MM, z = q[2] * MM, best = 1e9; object hit = null;
+    if (bodies != null) foreach (Body2 bd in bodies) {
+      object[] ents = (object[])(face ? bd.GetFaces() : bd.GetEdges());
+      if (ents == null) continue;
+      foreach (object o in ents) {
+        double[] c = (double[])(face ? ((Face2)o).GetClosestPointOn(x, y, z) : ((Edge)o).GetClosestPointOn(x, y, z));
+        if (c == null) continue;
+        double dd = Math.Sqrt((c[0] - x) * (c[0] - x) + (c[1] - y) * (c[1] - y) + (c[2] - z) * (c[2] - z));
+        if (dd < best) { best = dd; hit = o; }
+      }
+    }
+    if (hit == null || best > 0.05 * MM) { log.AppendLine(String.Format("  !! {0}: no {1} at {2:F1}, {3:F1}, {4:F1} (nearest {5:F2} mm away)", name, face ? "face" : "edge", q[0], q[1], q[2], best / MM)); return false; }
+    SelectData sd = (SelectData)((SelectionMgr)doc.SelectionManager).CreateSelectData();
+    sd.Mark = mark;
+    return ((Entity)hit).Select4(append, sd);
+  }
+  // fillet the edges that pass through the given model points {x, y, z} (x is mirrored for hand B). Concave or convex.
+  static bool filChain = false;   // true: the fillet runs on along tangent edges
+  static Feature FilC(double r, string name, params double[][] pts) { filChain = true; Feature f = Fil(r, name, pts); filChain = false; return f; }
+  // 45 deg chamfer on the edges through the given points (for corners that touch the bed, where a round would overhang)
+  static bool chamChain = false;
+  static Feature ChamC(double w, string name, params double[][] pts) { chamChain = true; Feature f = ChamE(w, name, pts); chamChain = false; return f; }
+  static Feature ChamE(double w, string name, params double[][] pts) {
+    doc.ClearSelection2(true);
+    int n = 0;
+    foreach (double[] q in pts) if (Pick(q, false, true, 0, name)) n++;
+    if (n == 0) return null;
+    Feature f = (Feature)doc.FeatureManager.InsertFeatureChamfer(chamChain ? 4 : 0, 1, w * MM, Math.PI / 4, 0, 0, 0, 0);
+    Name(f, name);
+    return f;
+  }
+  static Feature Fil(double r, string name, params double[][] pts) {
+    doc.ClearSelection2(true);
+    int n = 0;
+    foreach (double[] q in pts) if (Pick(q, false, true, 1, name)) n++;
+    if (n == 0) return null;
+    Feature f = (Feature)doc.FeatureManager.FeatureFillet3(filChain ? 195 : 194, r * MM, 0, 0, 0, 0, 0, null, null, null, null, null, null, null);
+    Name(f, name);
+    return f;
+  }
+  // 45 deg chamfer round the face that contains the model point (the bed face of a print)
+  static Feature Cham(double w, string name, double[] q) {
+    doc.ClearSelection2(true);
+    if (!Pick(q, true, false, 0, name)) return null;
+    Feature f = (Feature)doc.FeatureManager.InsertFeatureChamfer(4, 1, w * MM, Math.PI / 4, 0, 0, 0, 0);
+    Name(f, name);
+    return f;
+  }
+
   class Lay {
     public double zf, zFront, zRearIn, zRearOut, zb, zSeat, zTop, zScrew;
     public double webInX, webOutX, bumpX, tipX, webInY, webOutY, bumpY, tipY;
@@ -405,8 +457,8 @@ public static class Gen {
       double zRear = -(p("lightH") + p("footBack")), zStep = a.zRearOut - 0.8, zFwd = a.zTop + p("footFwd");
       double xIn = ex - 0.1, zLegTop = zJ + sc;
       // leg and pad carried down to the sole, standing fc off the housing (end-cap laps, screw heads)
-      double fs = (fc + 1.1 - fc * a.nX) / a.dX, fz = -sf + fc * a.nZ + fs * a.dZ;
-      PY(new double[][] { new double[] { fc + 1.1, fz }, new double[] { fc + 1.1, zLegTop }, new double[] { xo, zLegTop }, new double[] { xo, zO2 },
+      double fs = (fc + 0.3 - fc * a.nX) / a.dX, fz = -sf + fc * a.nZ + fs * a.dZ;
+      PY(new double[][] { new double[] { fc + 0.3, fz }, new double[] { fc + 0.3, zLegTop }, new double[] { xo, zLegTop }, new double[] { xo, zO2 },
         new double[] { ex + tp * a.nX, ez + tp * a.nZ }, new double[] { ex + fc * a.nX, ez + fc * a.nZ } }, y2 - 0.5, yTop + 0.5, false, "foot leg");
       PY(Rect(xIn, zRear, xo, zStep), yTop, yBot, false, "sole under the housing");
       PY(Rect(xIn, zStep - 0.5, xo, zFwd), yThin, yBot, false, "sole under the block");
@@ -414,21 +466,23 @@ public static class Gen {
       double gx = a.bumpX + 0.4, gz = a.zTop - (yThin - y2);
       PX(new double[][] { new double[] { y2 - 0.5, zLegTop - 0.5 }, new double[] { y2 - 0.5, a.zTop }, new double[] { y2, a.zTop }, new double[] { yThin + 0.5, gz }, new double[] { yThin + 0.5, zLegTop - 0.5 } },
         gx, xo, false, "seat gusset");
-      // rib behind the wing of the housing, stiffening the tail of the sole
-      double rz = -p("lightWingDepth") - 3, rh = p("footRibH");
-      PX(new double[][] { new double[] { yTop + 0.5, rz }, new double[] { yTop - rh, rz }, new double[] { yTop - rh, rz - 4 }, new double[] { yTop, zRear + 2 }, new double[] { yTop + 0.5, zRear + 2 } },
-        xIn + 8, xIn + 8 + p("footRibT"), false, "tail rib");
       // diagonal brace: a web outside the side plane of the housing, from the top of the bracket down to the tail of the sole.
       // With bumpers at the two ends of the sole the lamp's weight lands between them; this makes that span a deep beam (creep).
-      double zW = zO2 + 1, bx0 = fc + 0.3;
-      PX(new double[][] { new double[] { yTop + 0.5, zRear }, new double[] { yTop - p("footBraceEnd"), zRear }, new double[] { y1, zW - 6 }, new double[] { y1, zW }, new double[] { yTop + 0.5, zW } },
+      double zW = zO2 + 1, bx0 = fc + 0.3, rT = p("footCornerR");
+      // The M6 is driven from outside along the normal to the angled face. That line crosses the brace; the brace is
+      // held below a tool cylinder of radius toolR about it (it drops steeply behind the leg, then runs shallow to the tail).
+      double tR = p("toolR"), s0 = (bx0 - a.cX) / a.nX, zLos = a.cZ + s0 * a.nZ, zC = zLos + tR / Math.Abs(a.nX), yCut = a.yi + tR;
+      if (zC > zW - 10) { zC = zW - 10; log.AppendLine("  !! brace cannot clear the M6 tool line"); }
+      PX(new double[][] { new double[] { yTop + 0.5, zRear + rT }, new double[] { yTop - p("footBraceEnd"), zRear + rT }, new double[] { yCut, zC },
+        new double[] { y1, zW - 6 }, new double[] { y1, zW }, new double[] { yTop + 0.5, zW } },
         bx0, xo, false, "side brace");
-      { double wt = xo - bx0, zh = -p("lightWingDepth"), hh = (yTop - y1) * (zh - zRear) / (zW - 6 - zRear) + (yBot - yTop);   // depth of web + sole where the housing ends
+      { double wt = xo - bx0, zh = -p("lightWingDepth"), hh = (yBot - yCut) + (y1 < yCut && zh > zC ? (yCut - y1) * (zh - zC) / (zW - 6 - zC) : 0);   // depth of web + sole where the housing ends
         double span = (a.zTop - 5) - (zRear + 12), la = (a.zTop - 5) - (-p("lightSideFlat")), lb = span - la, W = p("footLoadN");
         double Mb = W * la * lb / span, Iw = wt * hh * hh * hh / 12, sg = Mb * (hh / 2) / Iw, I0 = (xo - xIn) * Math.Pow(yBot - yTop, 3) / 12, sg0 = Mb * ((yBot - yTop) / 2) / I0;
         log.AppendLine(String.Format("  foot span between bumpers {0:F0}; {1:F0} N per foot landing {2:F0} from the front one -> {3:F0} N.mm", span, W, la, Mb));
         log.AppendLine(String.Format("  foot sustained bending: brace + sole {0:F0} deep x {1:F1} -> {2:F2} MPa (sole alone would be {3:F1} MPa)", hh, wt, sg, sg0));
         if (sg > 1.0) log.AppendLine("  !! sustained stress over 1 MPa: creep"); }
+      log.AppendLine(String.Format("  M6 line of sight: tool axis crosses the brace at z {0:F0}; brace top held {1:F0} below the axis from z {2:F0} back to the tail", zLos, tR, zC));
       // the side screw-head relief carried through to the end
       PX(Rect(y2 - p("relLen"), -p("relZfar"), yTop - 0.2, -p("relZnear")), -1, sc + p("relDepth"), true, "screw head relief to the end");
       double thin = yBot - yThin, thick = yBot - yTop, wS = xo - xIn, tail = -p("lightWingDepth") - zRear;
@@ -437,8 +491,48 @@ public static class Gen {
       log.AppendLine(String.Format("  foot: stance front to back {0:F0} mm, {1:F0} behind the housing back, {2:F0} in front of the frame", zFwd - zRear, p("footBack"), p("footFwd")));
       if (yTop < p("endHeadH") + 0.5) log.AppendLine("  !! sole under 0.5 clear of the end screw heads");
       if (thin < 2.5) log.AppendLine("  !! sole under the block is under 2.5 thick");
-      if (rz - 4 < zRear + 10) log.AppendLine("  !! no room for the tail rib");
       if (gz < zLegTop) log.AppendLine("  !! gusset geometry inverted");
+    }
+    // ---- corners. Edges that stand vertical in the print get radii. Corners that touch the bed get 45 deg chamfers
+    // (a round tangent to the bed is an overhang). Bracket prints on its y1 face; the foot prints on its sole.
+    {
+      double rv = p("visR"), re = p("edgeR"), xm = (a.jog + xo) / 2, ym = (y1 + y2) / 2;
+      double pmx = ex + tp / 2 * a.nX, pmz = ez + tp / 2 * a.nZ;
+      if (footMode) {
+        Fil(rv, "leg top corner", V(xm, y1, a.zTop));
+        Fil(rv, "pad end corner", V(pmx, y1, pmz));
+      } else {
+        ChamE(rv, "leg top corners", V(xm, y1, a.zTop), V(xm, y2, a.zTop));
+        ChamE(rv, "pad end corners", V(pmx, y1, pmz), V(pmx, y2, pmz));
+        Fil(p("bendOutR"), "outside of the bend", V(xo, ym, zO2));
+      }
+      Fil(rv * 0.75, "leg top outer edge", V(xo, ym, a.zTop));
+      Fil(rv * 0.75, "pad end outer edge", V(ex + tp * a.nX, ym, ez + tp * a.nZ));
+      Fil(re, "leg top inner edge", V(a.jog, ym, a.zTop));
+      Fil(re, "pad end inner edge", V(ex, ym, ez));
+      if (footMode) {
+        double fc = p("footClr"), yTop = p("footEndClr"), yBot = a.bumpY + p("footLift"), yThin = a.bumpY + p("footBlockClr");
+        double zRear = -(p("lightH") + p("footBack")), zFwd = a.zTop + p("footFwd"), xIn = ex - 0.1, bx0 = fc + 0.3;
+        double fs = (fc + 0.3 - fc * a.nX) / a.dX, fz = -sf + fc * a.nZ + fs * a.dZ, rT = p("footCornerR");
+        double s0 = (bx0 - a.cX) / a.nX, zC = a.cZ + s0 * a.nZ + p("toolR") / Math.Abs(a.nX), yCut = a.yi + p("toolR"), zW = zO2 + 1;
+        Fil(rT, "sole tail corners", V(xo, (yTop + yBot) / 2, zRear), V(xIn, (yTop + yBot) / 2, zRear));
+        Fil(p("footFrontR"), "sole front corners", V(xo, (yThin + yBot) / 2, zFwd), V(xIn, (yThin + yBot) / 2, zFwd));
+        Fil(p("braceKinkR"), "brace kink", V((bx0 + xo) / 2, yCut, zC));
+        Fil(rv, "brace top corner", V((bx0 + xo) / 2, y1, zW - 6));
+        Fil(p("insideR"), "inside corner of the foot leg", V(fc + 0.3, (y2 + yTop) / 2, fz));
+        Fil(p("insideR"), "brace to sole", V(bx0, yTop, zC - 20));
+        FilC(p("soleTopR"), "sole top edge, tail", V(xIn, yTop, zRear + 40));
+        FilC(p("soleTopR"), "sole top edge, front", V(xIn, yThin, zFwd - 12));
+        Cham(p("bedCham"), "bed face chamfer", V(xIn + 15, yBot, zRear + 40));
+      } else {
+        // bed-face edges, chained along tangents; the small relief arc at the inside of the bend is left as it is
+        ChamC(p("bedChamSmall"), "bed face chamfer", V(xo, y1, 0), V(sc, y1, -10), V(a.jog, y1, a.zTop - 6),
+          V(ex / 2 + tp * a.nX, y1, (ez - sf) / 2 + tp * a.nZ), V(ex / 2, y1, (ez - sf) / 2));
+        FilC(re, "top face edge", V(xo, y2, 0));
+        double left = Math.Sqrt((xo - sc) * (xo - sc) + (zO2 + sf) * (zO2 + sf)) - p("cornerRelBack") - p("cornerRelR") - 0.147 * p("bendOutR");
+        log.AppendLine(String.Format("  plastic across the bend after the outside radius: about {0:F1}", left));
+        if (left < 5.5) log.AppendLine("  !! under 5.5 mm of plastic across the bend");
+      }
     }
     Finish(path, tag, 0.15, 0.2, 0.35, imgDir, "*Isometric", 7);
   }
