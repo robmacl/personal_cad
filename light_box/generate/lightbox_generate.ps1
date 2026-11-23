@@ -1,6 +1,6 @@
 # Generates the light box v2 printed parts in a running SolidWorks session.
 #
-#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|footA|footB|spacer|mock] [-ImgDir <dir>]
+#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|footA|footB|spacer|mock|housing|diffuser|chanSide|chanEnd|assembly] [-ImgDir <dir>]
 #   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 -What stl -StlTag <tag> [-StlParts a,b,...]
 #
 # The second form writes fine STL print files to ../stl/lb_<part>_<tag>.STL.
@@ -172,6 +172,7 @@ public static class Gen {
     }
     return true;
   }
+  static double finTransp = 0;
   static void Finish(string path, string tag, double r, double g, double b, string imgDir, string view, int viewId) {
     doc.ClearSelection2(true);
     EquationMgr eq = (EquationMgr)doc.GetEquationMgr();
@@ -187,7 +188,7 @@ public static class Gen {
     }
     doc.ClearSelection2(true);
     doc.ForceRebuild3(false);
-    doc.MaterialPropertyValues = new double[] { r, g, b, 1.0, 1.0, 0.2, 0.3, 0.0, 0.0 };
+    doc.MaterialPropertyValues = new double[] { r, g, b, 1.0, 1.0, 0.2, 0.3, finTransp, 0.0 };
     // report
     object[] bodies = (object[])((PartDoc)doc).GetBodies2((int)swBodyType_e.swSolidBody, true);
     if (bodies == null) { log.AppendLine(tag + ": !! no body"); return; }
@@ -257,6 +258,16 @@ public static class Gen {
     double[] b1 = V(sgn * (ax + len * nx + r * dx), yc, az + len * nz + r * dz), b0 = V(sgn * (ax + r * dx), yc, az + r * dz);
     SketchSegment axis = Ln(a0, a1); Ln(a1, b1); Ln(b1, b0); Ln(b0, a0);
     Feature f = Revolve(Close(name + " sketch"), axis, false, true);
+    Name(f, name);
+    return f;
+  }
+  static Feature RevCutYAdd(double yc, double ax, double az, double nx, double nz, double len, double r, string name) {
+    double dx = -nz, dz = nx;
+    Open(PlaneAt(1, yc));
+    double[] a0 = V(sgn * ax, yc, az), a1 = V(sgn * (ax + len * nx), yc, az + len * nz);
+    double[] b1 = V(sgn * (ax + len * nx + r * dx), yc, az + len * nz + r * dz), b0 = V(sgn * (ax + r * dx), yc, az + r * dz);
+    SketchSegment axis = Ln(a0, a1); Ln(a1, b1); Ln(b1, b0); Ln(b0, a0);
+    Feature f = Revolve(Close(name + " sketch"), axis, false, false);
     Name(f, name);
     return f;
   }
@@ -362,17 +373,17 @@ public static class Gen {
   static void BuildBlock(string path, string imgDir, string tag) {
     if (!OpenOrNew(path)) return;
     Lay a = L(); LayoutReport(a);
-    double c = p("cornerCham"), lt = p("tongueLen"), tx = a.webInX - p("tongueClrX"), ty = a.webInY - p("tongueClrX");
+    double lt = p("tongueLen"), tx = a.webInX - p("tongueClrX"), ty = a.webInY - p("tongueClrX");
     // body and tongues, zb..zSeat
     PZ(new double[][] {
-      new double[] { a.bumpX, a.bumpY - c }, new double[] { a.bumpX - c, a.bumpY },
+      new double[] { a.bumpX, a.bumpY },
       new double[] { a.xe, a.bumpY }, new double[] { a.xe, ty }, new double[] { a.xe - lt, ty }, new double[] { a.xe - lt, a.tipY },
       new double[] { a.tipX, a.tipY },
       new double[] { a.tipX, a.ys - lt }, new double[] { tx, a.ys - lt }, new double[] { tx, a.ys }, new double[] { a.bumpX, a.ys } },
       a.zb, a.zSeat, false, "body and tongues");
     // rim round the diffuser corner, zb..zTop
     PZ(new double[][] {
-      new double[] { a.bumpX, a.bumpY - c }, new double[] { a.bumpX - c, a.bumpY },
+      new double[] { a.bumpX, a.bumpY },
       new double[] { a.xe, a.bumpY }, new double[] { a.xe, a.webInY }, new double[] { a.webInX, a.webInY },
       new double[] { a.webInX, a.ys }, new double[] { a.bumpX, a.ys } },
       a.zb, a.zTop, false, "rim");
@@ -385,6 +396,19 @@ public static class Gen {
     if (a.webOutX - p("pilotDepth") < a.tipX + 1.5) log.AppendLine("  !! screw pilot breaks through the inside of the block");
     if (a.yi - bw / 2 - bc < a.ys + 3) log.AppendLine("  !! bracket seat runs off the end of the side arm");
     if (a.zScrew - p("pilotD") / 2 - a.zb < 2.5 || a.zSeat - a.zScrew - p("pilotD") / 2 < 2.5) log.AppendLine("  !! under 2.5 mm of plastic around the screw pilots");
+    // ---- corners. The block prints flat on its back, so every edge along z is vertical in the print and can be round.
+    {
+      double zm = (a.zb + a.zTop) / 2, zr = (a.zSeat + a.zTop) / 2, zt = (a.zb + a.zSeat) / 2, rc = p("cornerR"), rimX = a.bumpX - a.webInX, rimY = a.bumpY - a.webInY;
+      Fil(rc, "bumper corner", V(a.bumpX, a.bumpY, zm));
+      Fil(p("rimInR"), "inside corner of the rim", V(a.webInX, a.webInY, zr));
+      Fil(Math.Min(2.0, p("proud") - 0.3), "rim ends", V(a.bumpX, a.ys, zm), V(a.xe, a.bumpY, zm));
+      Fil(1.5, "tongue lead-in", V(tx, a.ys - lt, zt), V(a.tipX, a.ys - lt, zt), V(a.xe - lt, ty, zt), V(a.xe - lt, a.tipY, zt));
+      FilC(p("edgeR"), "rim top edge", V(a.bumpX, a.ys + 3, a.zTop), V(a.xe + 3, a.bumpY, a.zTop));
+      Cham(p("bedChamSmall"), "bed face chamfer", V(a.tipX + 3, a.ys - lt / 2, a.zb));
+      double diag = Math.Sqrt(rimX * rimX + rimY * rimY) - rc * (Math.Sqrt(2) - 1) + p("rimInR") * (Math.Sqrt(2) - 1);
+      log.AppendLine(String.Format("  bumper rim {0:F2} x {1:F2} thick; across the rounded corner {2:F1}; rim stands {3:F1} proud of the channel faces", rimX, rimY, diag, p("proud")));
+      if (diag < 3) log.AppendLine("  !! under 3 mm of rim across the bumper corner");
+    }
     Finish(path, tag, 0.15, 0.2, 0.35, imgDir, "*Isometric", 7);
   }
 
@@ -443,6 +467,9 @@ public static class Gen {
       a.jog - 1, a.jog + t + 1, true, "screw holes");
     log.AppendLine(String.Format("  bracket: leg {0:F1} thick, air span front of lamp to block {1:F1}, pad {2:F1} long on a {3:F1} face, {4:F1} of pad beyond the slot",
       t, a.zb, lp, p("lightSlopeLen"), lp - p("insUpSlope") - hs - r));
+    { double fy = (p("m6Clr") - 6.0) / 2 + p("brkSeatClr");
+      log.AppendLine(String.Format("  float per bracket: {0:F1} along the length (M6 in a {1:F1} wide slot, plus the seat), {2:F1} along the slope; needs a washer of {3:F0} OD or more", fy, p("m6Clr"), (p("m6Slot") + p("m6Clr") - 6.0) / 2, p("m6Clr") + 7));
+      if (p("flangeRelD") < p("insFlangeD") + 2 * ((p("m6Clr") - 6.0) / 2) + 0.5) log.AppendLine("  !! flange relief too small for the float along the length"); }
     if (lp > p("lightSlopeLen") - 1) log.AppendLine("  !! pad runs past the angled face");
     if (lp - p("insUpSlope") - hs - r < 3) log.AppendLine("  !! under 3 mm of pad beyond the M6 slot");
     if (bw / 2 - sp - p("screwClrD") / 2 < 2.5) log.AppendLine("  !! bracket screws under 2.5 mm from the edge");
@@ -553,6 +580,8 @@ public static class Gen {
       new double[] { a.tipY, a.zRearOut }, new double[] { a.webOutY, a.zRearOut }, new double[] { a.webOutY, a.zFront }, new double[] { a.tipY, a.zFront },
       new double[] { a.tipY, a.zf }, new double[] { a.webInY, a.zf }, new double[] { a.webInY, a.zRearIn }, new double[] { a.tipY, a.zRearIn } },
       far, a.xe, false, "end channel");
+    CX(new double[][] { new double[] { -p("headFromEnd"), -p("headBack"), p("headD") } }, -1, p("headH"), false, "side screw head");
+    RevCutYAdd(a.yi, a.cX - 1.0 * a.nX, a.cZ - 1.0 * a.nZ, a.nX, a.nZ, 1.0 + p("insFlangeH"), p("insFlangeD") / 2, "insert flange");
     Finish(path, "lb_mock_corner", 0.75, 0.75, 0.75, imgDir, "*Isometric", 7);
   }
 
@@ -571,6 +600,107 @@ public static class Gen {
     log.AppendLine(String.Format("  side channel: {0:F0} between tongues, {1} spacers -> {2:F0} of unsupported sheet edge between supports", sideFree, ns, (sideFree - ns * len) / (ns + 1)));
     log.AppendLine(String.Format("  end channel: {0:F0} between tongues, {1} spacers -> {2:F0} between supports; {3} spacers in all", endFree, ne, (endFree - ne * len) / (ne + 1), 2 * ns + 2 * ne));
     Finish(path, "lb_spacer", 0.15, 0.2, 0.35, imgDir, "*Isometric", 7);
+  }
+
+  // ---------------------------------------------------------------- whole lamp, for looking at
+  // Global frame: X across the width (0 at the centre), Y along the length (0 at the centre, +Y is the TOP end,
+  // the feet are at -Y), Z toward the viewer (0 at the front edge of the housing). SolidWorks shows Y up.
+  // The housing, diffuser and channels are stand-ins built from the same parameters; they are not print parts.
+  static void BuildHousing(string path, string imgDir) {
+    if (!OpenOrNew(path)) return;
+    Lay a = L(); sgn = 1;
+    double W2 = p("lightW") / 2, L2 = p("lightL") / 2, sf = p("lightSideFlat"), wd = p("lightWingDepth"), run = -p("lightSlopeLen") * a.dX, cw = p("lightChanW") / 2, H = p("lightH");
+    PY(new double[][] { new double[] { W2, 0 }, new double[] { W2, -sf }, new double[] { W2 - run, -wd }, new double[] { cw, -wd }, new double[] { cw, -H }, new double[] { -cw, -H },
+      new double[] { -cw, -wd }, new double[] { -(W2 - run), -wd }, new double[] { -W2, -sf }, new double[] { -W2, 0 } }, -L2, L2, false, "housing");
+    Finish(path, "lb_housing", 0.86, 0.86, 0.84, imgDir, "*Isometric", 7);
+  }
+  static void BuildDiffuser(string path, string imgDir) {
+    if (!OpenOrNew(path)) return;
+    Lay a = L(); sgn = 1;
+    PZ(Rect(-p("diffW") / 2, -p("diffL") / 2, p("diffW") / 2, p("diffL") / 2), p("gap"), a.zf, false, "diffuser");
+    finTransp = 0.25; Finish(path, "lb_diffuser", 0.97, 0.97, 0.95, imgDir, "*Isometric", 7); finTransp = 0;
+  }
+  static void BuildChannel(string path, string imgDir, bool side) {
+    if (!OpenOrNew(path)) return;
+    Lay a = L(); sgn = 1;
+    double W2 = p("lightW") / 2, L2 = p("lightL") / 2;
+    if (side) {
+      double half = L2 + a.ys;
+      PY(new double[][] { new double[] { W2 + a.tipX, a.zRearOut }, new double[] { W2 + a.webOutX, a.zRearOut }, new double[] { W2 + a.webOutX, a.zFront }, new double[] { W2 + a.tipX, a.zFront },
+        new double[] { W2 + a.tipX, a.zf }, new double[] { W2 + a.webInX, a.zf }, new double[] { W2 + a.webInX, a.zRearIn }, new double[] { W2 + a.tipX, a.zRearIn } }, -half, half, false, "side channel");
+      log.AppendLine(String.Format("  side channel length {0:F1}", 2 * half));
+    } else {
+      double half = W2 + a.xe;
+      PX(new double[][] { new double[] { L2 + a.tipY, a.zRearOut }, new double[] { L2 + a.webOutY, a.zRearOut }, new double[] { L2 + a.webOutY, a.zFront }, new double[] { L2 + a.tipY, a.zFront },
+        new double[] { L2 + a.tipY, a.zf }, new double[] { L2 + a.webInY, a.zf }, new double[] { L2 + a.webInY, a.zRearIn }, new double[] { L2 + a.tipY, a.zRearIn } }, -half, half, false, "end channel");
+      log.AppendLine(String.Format("  end channel length {0:F1}", 2 * half));
+    }
+    Finish(path, side ? "lb_channel_side" : "lb_channel_end", 0.74, 0.75, 0.77, imgDir, "*Isometric", 7);
+  }
+  static MathTransform Xf(double[] rot, double tx, double ty, double tz) {
+    MathUtility mu = (MathUtility)sw.GetMathUtility();
+    return (MathTransform)mu.CreateTransform(new double[] { rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8], tx * MM, ty * MM, tz * MM, 1, 0, 0, 0 });
+  }
+  static Component2 Place(AssemblyDoc asm, ModelDoc2 adoc, string file, MathTransform t) {
+    int e = 0, w = 0;
+    if (!System.IO.File.Exists(file)) { log.AppendLine("!! missing " + file); return null; }
+    sw.OpenDoc6(file, (int)swDocumentTypes_e.swDocPART, (int)swOpenDocOptions_e.swOpenDocOptions_Silent, "", ref e, ref w);
+    sw.ActivateDoc3(adoc.GetTitle(), false, (int)swRebuildOnActivation_e.swDontRebuildActiveDoc, ref e);
+    Component2 cmp = (Component2)asm.AddComponent5(file, (int)swAddComponentConfigOptions_e.swAddComponentConfigOptions_CurrentSelectedConfig, "", false, "", 0, 0, 0);
+    if (cmp == null) { log.AppendLine("!! could not add " + file); return null; }
+    adoc.ClearSelection2(true); cmp.Select4(false, null, false); asm.UnfixComponent();
+    cmp.Transform2 = t;
+    adoc.ClearSelection2(true); cmp.Select4(false, null, false); asm.FixComponent();
+    double[] b = (double[])cmp.GetBox(false, false);
+    log.AppendLine(String.Format("  {0,-26} x {1,7:F1}..{4,7:F1}  y {2,7:F1}..{5,7:F1}  z {3,7:F1}..{6,7:F1}", System.IO.Path.GetFileNameWithoutExtension(file), b[0] * 1000, b[1] * 1000, b[2] * 1000, b[3] * 1000, b[4] * 1000, b[5] * 1000));
+    return cmp;
+  }
+  static void BuildAssembly(string dir, string imgDir) {
+    int e = 0, w = 0;
+    string path = dir + SEP + "lb_light_box.SLDASM";
+    double[] I = { 1, 0, 0, 0, 1, 0, 0, 0, 1 }, R = { -1, 0, 0, 0, -1, 0, 0, 0, 1 };   // R: half a turn about Z
+    double W2 = p("lightW") / 2, L2 = p("lightL") / 2;
+    ModelDoc2 adoc;
+    if (System.IO.File.Exists(path)) {
+      adoc = (ModelDoc2)sw.OpenDoc6(path, (int)swDocumentTypes_e.swDocASSEMBLY, (int)swOpenDocOptions_e.swOpenDocOptions_Silent, "", ref e, ref w);
+      if (adoc == null) { log.AppendLine("!! could not open the assembly, err " + e); return; }
+      adoc = (ModelDoc2)sw.ActivateDoc3(adoc.GetTitle(), false, (int)swRebuildOnActivation_e.swRebuildActiveDoc, ref e);
+      adoc.ForceRebuild3(false);
+      log.AppendLine("assembly: already exists; reopened and rebuilt (component positions are as first placed)");
+    } else {
+      string tpl = sw.GetUserPreferenceStringValue((int)swUserPreferenceStringValue_e.swDefaultTemplateAssembly);
+      adoc = (ModelDoc2)sw.NewDocument(tpl, 0, 0, 0);
+      if (adoc == null) { log.AppendLine("!! could not start an assembly"); return; }
+      AssemblyDoc asm = (AssemblyDoc)adoc;
+      Place(asm, adoc, dir + SEP + "lb_housing.SLDPRT", Xf(I, 0, 0, 0));
+      Place(asm, adoc, dir + SEP + "lb_diffuser.SLDPRT", Xf(I, 0, 0, 0));
+      Place(asm, adoc, dir + SEP + "lb_channel_side.SLDPRT", Xf(I, 0, 0, 0));
+      Place(asm, adoc, dir + SEP + "lb_channel_side.SLDPRT", Xf(R, 0, 0, 0));
+      Place(asm, adoc, dir + SEP + "lb_channel_end.SLDPRT", Xf(I, 0, 0, 0));
+      Place(asm, adoc, dir + SEP + "lb_channel_end.SLDPRT", Xf(R, 0, 0, 0));
+      // corners: hand A as built at (+X, +Y); the diagonal corner is the same part turned half round; hand B for the other two
+      Place(asm, adoc, dir + SEP + "lb_corner_block_A.SLDPRT", Xf(I, W2, L2, 0));
+      Place(asm, adoc, dir + SEP + "lb_corner_block_A.SLDPRT", Xf(R, -W2, -L2, 0));
+      Place(asm, adoc, dir + SEP + "lb_corner_block_B.SLDPRT", Xf(I, -W2, L2, 0));
+      Place(asm, adoc, dir + SEP + "lb_corner_block_B.SLDPRT", Xf(R, W2, -L2, 0));
+      Place(asm, adoc, dir + SEP + "lb_bracket_A.SLDPRT", Xf(I, W2, L2, 0));      // top corners: plain brackets
+      Place(asm, adoc, dir + SEP + "lb_bracket_B.SLDPRT", Xf(I, -W2, L2, 0));
+      Place(asm, adoc, dir + SEP + "lb_foot_A.SLDPRT", Xf(R, -W2, -L2, 0));       // bottom corners: feet
+      Place(asm, adoc, dir + SEP + "lb_foot_B.SLDPRT", Xf(R, W2, -L2, 0));
+      adoc.ClearSelection2(true);
+      adoc.EditRebuild3();
+      bool ok = adoc.Extension.SaveAs(path, 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref e, ref w);
+      log.AppendLine("assembly: saved " + ok + (e != 0 ? " err " + e : ""));
+    }
+    if (imgDir != "") {
+      foreach (string[] v in new string[][] { new string[] { "*Isometric", "7", "assem_iso.jpg" }, new string[] { "*Front", "1", "assem_front.jpg" }, new string[] { "*Back", "2", "assem_back.jpg" },
+          new string[] { "*Right", "4", "assem_side.jpg" }, new string[] { "*Bottom", "6", "assem_bottom.jpg" } }) {
+        adoc.ShowNamedView2(v[0], int.Parse(v[1])); adoc.ViewZoomtofit2(); adoc.GraphicsRedraw2();
+        adoc.Extension.SaveAs(imgDir + SEP + v[2], 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent | (int)swSaveAsOptions_e.swSaveAsOptions_Copy, null, ref e, ref w);
+      }
+      adoc.ShowNamedView2("*Isometric", 7); adoc.ViewZoomtofit2();
+    }
+    adoc.Save3((int)swSaveAsOptions_e.swSaveAsOptions_Silent, ref e, ref w);
   }
 
   // ---------------------------------------------------------------- fit gauge
@@ -637,6 +767,11 @@ public static class Gen {
       if (what == "footA") { sgn = 1; footMode = true; BuildBracket(dir + SEP + "lb_foot_A.SLDPRT", imgDir, "lb_foot_A"); }
       if (what == "footB") { sgn = -1; footMode = true; BuildBracket(dir + SEP + "lb_foot_B.SLDPRT", imgDir, "lb_foot_B"); }
       if (what == "spacer") BuildSpacer(dir + SEP + "lb_spacer.SLDPRT", imgDir);
+      if (what == "housing") BuildHousing(dir + SEP + "lb_housing.SLDPRT", imgDir);
+      if (what == "diffuser") BuildDiffuser(dir + SEP + "lb_diffuser.SLDPRT", imgDir);
+      if (what == "chanSide") BuildChannel(dir + SEP + "lb_channel_side.SLDPRT", imgDir, true);
+      if (what == "chanEnd") BuildChannel(dir + SEP + "lb_channel_end.SLDPRT", imgDir, false);
+      if (what == "assembly") BuildAssembly(dir, imgDir);
       if (what == "mock") BuildMock(dir + SEP + "lb_mock_corner.SLDPRT", imgDir);
       if (what == "stl") ExportPrint(dir, stlTag, stlParts.Split(','));
     } catch (Exception ex) { log.AppendLine("!! stopped: " + ex.Message + "\n" + ex.StackTrace); }

@@ -510,3 +510,53 @@ about 1 mm chamfer on the bed face; straight line of sight to the M6 head.
 CHECKED: four parts, one body each, no feature errors; overlap 0 for bracket A and foot A against
 the mock corner and the block. 93 cm3 per foot, 18.5 per bracket.
 NOT CHECKED: the tool line against a real driver or the thumb screw; nothing sliced or printed.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, DESIGN REVIEW (Robert: "check and improve this design") -> all print parts tagged 2026-11-23h
+FOUND AND CHANGED
+1. Not enough float along the length. The four brackets are each located twice: by the M6 insert on
+   the housing and by the seat in the corner block on the frame. Insert-to-insert along the length
+   is 563 mm from a housing length read off a yardstick (+/-1) and one insert position measured at
+   one corner; the frame's seat-to-seat distance comes from the diffuser. The float was +/-0.8 per
+   bracket. Now the M6 hole is 9.0 wide (was 7.0): +/-1.8 per bracket along the length, 4.0 along
+   the slope. NEEDS A WASHER of 16 OD or more under each M6 (fender washer). Flange relief 18 dia.
+2. Bumper rim at the corners was 3.07 thick with a 3 mm chamfer cut out of it: 2.2 of plastic across
+   the corner that takes the fall. Now the rim stands 2.5 proud of the channel faces (was 1.5):
+   4.07 thick, outside corner a real R6 radius, inside corner R1 (clear of the sheet corner by the
+   edge allowances), 3.7 across the corner. Frame outside is 2 mm bigger over the bumpers only.
+   CUT LENGTHS DO NOT CHANGE (523.9 / 294.0).
+3. Corner block rounded like the other parts: rim ends R2, rim top edge R1, tongue ends R1.5
+   (lead-in into the channel), bed-face chamfer 0.6.
+4. The mock corner now carries the side screw head (8.0 x 2.5) and the insert flange (12.3 dia,
+   1.0 high ASSUMED), so the two reliefs are inside the clash check instead of argued on paper.
+CHECKS (generate/lightbox_check.py and the new generate/lightbox_print_check.py)
+- Overlap 0 mm3: bracket A, foot A and block A against the mock corner and each other.
+- Hand B is the mirror of hand A for block, bracket and foot: difference 0.00 cm3. (Hand B had
+  never been checked against anything before.)
+- Overhangs in print orientation, from the meshes:
+    block    only the two pilot holes.
+    bracket  only the holes, the M6 slot and the flange relief.
+    foot     135 mm2 of flat ledge 1.1 to 1.9 wide where the leg and pad widen 21 above the bed;
+             a 3 x 14 bridge (roof of the screw-head relief); a 5 x 7 bridge (roof of the M6 slot).
+    spacer   none.
+  So "no supports" holds, with slightly rough ledges on the foot.
+FOUND AND NOT CHANGED (Robert's call)
+A. The screws from bracket into block run IN the layer plane of the block (it prints flat on its
+   back; the pilots are horizontal). A thread-forming screw wedges layers apart, and these eight
+   are the ones undone to take the frame off. 9.75 of plastic, 3.5 above and below the hole.
+   Options: (1) keep, drill the pilot generously, do not overtighten, 4+ walls; (2) M3 heat-set
+   inserts from the side; (3) M4 through the block arm into a square nut dropped in a slot from
+   the back. Claude would pick (2) or (3) if the frame is going to come off more than once or twice.
+B. Insert flange height is assumed 1.0 (relief is 1.5 deep). Not measured.
+C. Still unmeasured: bottom end face beyond the 2.8 screw heads; whether all four corners match.
+D. Centre of gravity unknown, so no tip angle. Handle not designed.
+MIXING: a block already printed from the e file fits the new brackets and feet (same seat, same
+tongues); its rim is 1 mm lower and thinner than the new one.
+
+ASSEMBLY  lb_light_box.SLDASM  (generate: -What housing | diffuser | chanSide | chanEnd | assembly)
+For looking at the whole lamp. Housing, diffuser and channels are stand-ins from the parameters.
+Global frame: X across, Y along the length (+Y top, feet at -Y), Z toward the viewer. Corners:
+block A at (+X,+Y) and, turned half round, at (-X,-Y); block B at the other two; plain brackets at
+the top, feet at the bottom. Spacers are not in it (hidden in the channels).
+If the assembly file exists the script reopens and rebuilds it; components keep their positions.
+Views in check/assem_*.jpg.
