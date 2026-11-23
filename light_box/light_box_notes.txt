@@ -457,3 +457,9 @@ should be at the front and the back with the middle relieved.
   end is now 12.1 above the table (before bumpers).
 - 105 cm3 each. Still prints sole down with no supports (the brace is a vertical wall).
 - Both hands rebuilt, no errors; overlap 0 against mock and block.
+
+MEASURED (Robert, v1): whole lamp 11.5 lb = 5.2 kg = 51 N, almost all of it the fixture.
+So 25.6 N per foot: the assumed footLoadN of 25 stands, and the 0.43 MPa sustained figure with it.
+Swivel about the single M6 (Robert): the frame resists it. Each foot is screwed to a corner block,
+and the two bottom blocks are joined by the end channel, so the two feet and the frame's bottom
+edge are one rigid piece held by two bolts 300 apart. No second fastener needed.
