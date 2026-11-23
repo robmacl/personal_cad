@@ -1,6 +1,6 @@
 # Generates the light box v2 printed parts in a running SolidWorks session.
 #
-#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|footA|footB|mock] [-ImgDir <dir>]
+#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|footA|footB|spacer|mock] [-ImgDir <dir>]
 #   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 -What stl -StlTag <tag> [-StlParts a,b,...]
 #
 # The second form writes fine STL print files to ../stl/lb_<part>_<tag>.STL.
@@ -462,6 +462,23 @@ public static class Gen {
     Finish(path, "lb_mock_corner", 0.75, 0.75, 0.75, imgDir, "*Isometric", 7);
   }
 
+  // ---------------------------------------------------------------- spacer: fills the slot behind the diffuser, mid-span
+  // Same section as the tongues of the corner blocks. Epoxied to the channel (rear leg and web), NOT to the sheet:
+  // a push on the front of the diffuser goes straight into the rear leg in compression, and no bond is asked to hold it.
+  // Own frame: x along the channel, y into the slot from the web (y = 0), z through the thickness. Prints flat.
+  static void BuildSpacer(string path, string imgDir) {
+    if (!OpenOrNew(path)) return;
+    Lay a = L(); sgn = 1;
+    double th = a.zSeat - a.zb, d = p("chanSlotDepth") - p("spacerShort"), c = p("spacerCham"), len = p("spacerLen");
+    PX(new double[][] { new double[] { 0, c }, new double[] { c, 0 }, new double[] { d, 0 }, new double[] { d, th }, new double[] { c, th }, new double[] { 0, th - c } }, 0, len, false, "spacer");
+    double sideFree = p("diffL") + 2 * p("edgeL") + 2 * p("chanFloor") - 2 * p("armSide") - 2 * p("tongueLen"), endFree = p("diffW") + 2 * p("edgeW") + 2 * p("chanFloor") - 2 * p("armEnd") - 2 * p("tongueLen");
+    int ns = (int)p("spacerPerSide"), ne = (int)p("spacerPerEnd");
+    log.AppendLine(String.Format("  spacer: {0:F2} thick (same as the tongues), {1:F1} into a {2:F2} slot, {3:F0} long, {4:F1} chamfer on the web-side edges", th, d, p("chanSlotDepth"), len, c));
+    log.AppendLine(String.Format("  side channel: {0:F0} between tongues, {1} spacers -> {2:F0} of unsupported sheet edge between supports", sideFree, ns, (sideFree - ns * len) / (ns + 1)));
+    log.AppendLine(String.Format("  end channel: {0:F0} between tongues, {1} spacers -> {2:F0} between supports; {3} spacers in all", endFree, ne, (endFree - ne * len) / (ne + 1), 2 * ns + 2 * ne));
+    Finish(path, "lb_spacer", 0.15, 0.2, 0.35, imgDir, "*Isometric", 7);
+  }
+
   // ---------------------------------------------------------------- fit gauge
   // A stepped bar to try in the channel slot, and four notches to try on the diffuser edge.
   // Steps get narrower away from the handle. Notches: the pair on the +y edge (the edge with the
@@ -525,6 +542,7 @@ public static class Gen {
       if (what == "bracketB") { sgn = -1; BuildBracket(dir + SEP + "lb_bracket_B.SLDPRT", imgDir, "lb_bracket_B"); }
       if (what == "footA") { sgn = 1; footMode = true; BuildBracket(dir + SEP + "lb_foot_A.SLDPRT", imgDir, "lb_foot_A"); }
       if (what == "footB") { sgn = -1; footMode = true; BuildBracket(dir + SEP + "lb_foot_B.SLDPRT", imgDir, "lb_foot_B"); }
+      if (what == "spacer") BuildSpacer(dir + SEP + "lb_spacer.SLDPRT", imgDir);
       if (what == "mock") BuildMock(dir + SEP + "lb_mock_corner.SLDPRT", imgDir);
       if (what == "stl") ExportPrint(dir, stlTag, stlParts.Split(','));
     } catch (Exception ex) { log.AppendLine("!! stopped: " + ex.Message + "\n" + ex.StackTrace); }

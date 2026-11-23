@@ -77,5 +77,10 @@
   "footRibH": 16.0,
   "footRibT": 6.0,
   "footBraceEnd": 3.0,
-  "footLoadN": 25.0
+  "footLoadN": 25.0,
+  "spacerLen": 60.0,
+  "spacerShort": 0.5,
+  "spacerCham": 0.8,
+  "spacerPerSide": 3,
+  "spacerPerEnd": 1
 }

@@ -463,3 +463,23 @@ So 25.6 N per foot: the assumed footLoadN of 25 stands, and the 0.43 MPa sustain
 Swivel about the single M6 (Robert): the frame resists it. Each foot is screwed to a corner block,
 and the two bottom blocks are joined by the end channel, so the two feet and the frame's bottom
 edge are one rigid piece held by two bolts 300 apart. No second fastener needed.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, SPACERS  lb_spacer  (print file tagged 2026-11-23; print 8)
+Robert: a push or knock on the front, or something set on it, is a moderately likely load. Would a
+bond to the front leg of the channel let go before the acrylic breaks?
+Claude's judgment: yes. A frontal push pulls the sheet off the front leg, which loads that bond in
+peel, the weakest way to load any adhesive; it would unzip long before a 2.9 mm sheet breaks.
+So no bond is asked to carry it. The sheet is trapped: front leg in front, spacers and block tongues
+behind, webs round the edge.
+- Spacer: 9.75 thick (the tongue section) x 10.6 deep x 60 long, 0.8 chamfer on the web-side edges
+  for the extrusion's inside radius. 6.2 cm3. Prints flat, no supports.
+- 3 per side channel, 1 per end channel: 8 in all. Unsupported sheet edge between supports about
+  71 on the sides, 87 on the ends. Positions are not critical.
+- ASSEMBLY: epoxy the spacers and the block tongues to the CHANNEL (rear leg and web). Abrade the
+  PETG and the aluminium (80 grit) and wipe with IPA; epoxy on PETG is only fair, but every one of
+  these joints is trapped in the slot and loaded in compression or shear, not peel.
+  The SHEET is not epoxied to anything: silicone dabs only, to stop rattle and allow for the
+  thermal mismatch (acrylic 70 ppm/K against aluminium 23).
+NOT CHECKED: the spacer in a real channel with the sheet (same section as the tongue, which has not
+been tried either; only the gauge has). Sheet clearance in the slot is 0.25 to 0.45.
