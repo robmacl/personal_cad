@@ -66,5 +66,14 @@
   "headBack": 16.4,
   "sideClr": 0.4,
   "cornerRelR": 1.5,
-  "cornerRelBack": 0.6
+  "cornerRelBack": 0.6,
+  "endHeadH": 2.8,
+  "footClr": 1.2,
+  "footEndClr": 3.5,
+  "footLift": 3.5,
+  "footBlockClr": 0.5,
+  "footBack": 30.0,
+  "footFwd": 25.0,
+  "footRibH": 16.0,
+  "footRibT": 6.0
 }

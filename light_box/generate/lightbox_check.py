@@ -61,7 +61,7 @@ def section(tris, axis, value):
     return segs
 
 src, out = sys.argv[1], sys.argv[2]
-parts = {'lb_mock_corner': (130, 130, 130), 'lb_corner_block_A': (30, 80, 200), 'lb_bracket_A': (200, 90, 20)}
+parts = {'lb_mock_corner': (130, 130, 130), 'lb_corner_block_A': (30, 80, 200), 'lb_bracket_A': (200, 90, 20), 'lb_foot_A': (20, 150, 60)}
 mesh = {k: load(os.path.join(src, k + '.STL')) for k in parts if os.path.exists(os.path.join(src, k + '.STL'))}
 for k, m in mesh.items():
     v = m.reshape(-1, 3)
@@ -71,6 +71,7 @@ print('\noverlap volumes (mm3; 0 = clear):')
 names = list(mesh)
 for i in range(len(names)):
     for j in range(i + 1, len(names)):
+        if {names[i], names[j]} == {'lb_bracket_A', 'lb_foot_A'}: continue   # alternatives for the same place
         vol, box = overlap(mesh[names[i]], mesh[names[j]])
         print('  %-18s vs %-18s %8.1f' % (names[i], names[j], vol) + ('   in x %.1f..%.1f y %.1f..%.1f z %.1f..%.1f' % (box[0][0], box[1][0], box[0][1], box[1][1], box[0][2], box[1][2]) if box else ''))
 
@@ -78,9 +79,11 @@ for i in range(len(names)):
 cuts = [(1, -20.65, 'y = -20.65: through the M6 insert (x right, z up)', (-60, 15), (-58, 36)),
         (1, -12.75, 'y = -12.75: through a bracket screw and the head relief', (-60, 15), (-58, 36)),
         (1, -55.0, 'y = -55: side tongue inside the channel', (-60, 15), (-58, 36)),
+        (1, 5.0, 'y = +5: past the housing end, through the sole', (-60, 15), (-130, 60)),
         (2, 20.3, 'z = 20.3: plan through body, tongues, pilots (x right, y up)', (-60, 15), (-80, 12)),
         (2, 27.0, 'z = 27: plan through the diffuser', (-60, 15), (-80, 12)),
-        (0, -5.05, 'x = -5.05: along the side arm (y right, z up)', (-80, 12), (-58, 36))]
+        (0, -5.05, 'x = -5.05: along the side arm (y right, z up)', (-80, 12), (-58, 36)),
+        (0, 6.0, 'x = +6: through the leg, gusset and sole (y right, z up)', (-40, 14), (-130, 60))]
 sc = 7; pad = 24
 tiles = []
 for axis, val, title, xl, yl in cuts:
@@ -96,11 +99,8 @@ for axis, val, title, xl, yl in cuts:
             dr.line([(pad + (a[0] - xl[0]) * sc, pad + (yl[1] - a[1]) * sc), (pad + (b[0] - xl[0]) * sc, pad + (yl[1] - b[1]) * sc)], fill=col, width=2)
     dr.text((pad, 4), title, fill='black')
     tiles.append(im)
-W = max(t.width for t in tiles[:3]) * 3; H1 = max(t.height for t in tiles[:3]); H2 = max(t.height for t in tiles[3:])
-sheet = Image.new('RGB', (max(W, sum(t.width for t in tiles[3:])), H1 + H2), 'white')
+sheet = Image.new('RGB', (sum(t.width for t in tiles), max(t.height for t in tiles)), 'white')
 x = 0
-for t in tiles[:3]: sheet.paste(t, (x, 0)); x += t.width
-x = 0
-for t in tiles[3:]: sheet.paste(t, (x, H1)); x += t.width
+for t in tiles: sheet.paste(t, (x, 0)); x += t.width
 sheet.save(out)
-print('\nsections ->', out, ' (grey mock, blue block, orange bracket)')
+print('\nsections ->', out, ' (grey mock, blue block, orange bracket, green foot)')

@@ -405,3 +405,29 @@ NOT CHECKED: the new bracket has not been printed or bent. Bend radius of the ho
 CUT LIST (unchanged; set by the diffuser 608.8 x 329.4, not the housing)
   side channels 523.9 mm (20.63 in) x 2      end channels 294.0 mm (11.58 in) x 2
   Check the sheet first: should read 23.97 x 12.97 in. Cut a hair long rather than short.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, FEET  lb_foot_A / _B  (print files tagged 2026-11-23)
+Why they are needed, not optional: the frame stands 4.6 past the housing end and the block rims 6.1,
+so without feet the lamp stands on the two front blocks and rocks back onto the housing.
+A foot is the bottom-corner bracket carried on past the end of the housing to a sole on the table.
+It REPLACES the plain bracket at the two bottom corners (one A, one B); the top corners keep plain
+brackets. Same fasteners: the M6 insert and the two screws into the block. Nothing new on the housing.
+- Sole 39.8 wide x 178 long: 30 behind the back of the housing (lightH 92), 25 in front of the frame.
+  6.1 thick under the housing, 3.0 under the corner block.
+- Table plane 9.6 below the housing end. The housing end sits 3.5 above the sole (end screw heads
+  are 2.8), the block rim 0.5 above it. Under load the sole comes up against those; that is intended,
+  the sole is a shim with a bracket to hold it, not a cantilever.
+- Leg and pad run down to the sole standing 1.2 off the housing (end-cap laps not measured). The
+  side screw-head relief is carried through to the end.
+- 45 deg gusset under the part of the leg in the block seat, outside the block bumper face, so that
+  part prints without support. Rib 16 high behind the housing wing stiffens the tail.
+- Prints SOLE DOWN. 66.6 cm3 each. Small unsupported ledges (about 1-2 mm) where the leg widens.
+- Stance front to back 178 mm against a lamp 605 tall. Centre of gravity NOT known; tip angles not
+  computed. footBack / footFwd are the two numbers to change.
+CHECKED: one body, no feature errors, both hands; mesh overlap 0 for foot A against the mock corner
+and the block. Sections in check/sections.png (green).
+NOT CHECKED: anything on the bottom end face other than the 2.8 screw heads (cord exit, labels,
+other fasteners within 40 mm of each side); the space behind the wing back where the rib goes;
+weight and centre of gravity; not sliced or printed.
+STILL TO DESIGN: carry handle (two M6 inserts on the driver channel), mid-span spacers.

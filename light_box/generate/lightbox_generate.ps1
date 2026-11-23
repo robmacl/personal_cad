@@ -1,6 +1,6 @@
 # Generates the light box v2 printed parts in a running SolidWorks session.
 #
-#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|mock] [-ImgDir <dir>]
+#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|footA|footB|mock] [-ImgDir <dir>]
 #   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 -What stl -StlTag <tag> [-StlParts a,b,...]
 #
 # The second form writes fine STL print files to ../stl/lb_<part>_<tag>.STL.
@@ -337,6 +337,7 @@ public static class Gen {
   }
 
   // ---------------------------------------------------------------- bracket: frame corner to the M6 insert on the angled face
+  static bool footMode = false;
   static void BuildBracket(string path, string imgDir, string tag) {
     if (!OpenOrNew(path)) return;
     Lay a = L();
@@ -397,6 +398,37 @@ public static class Gen {
     // bending check on the leg: a sideways knock F on the frame corner, taken across the air span
     double F = p("knockN"), arm = a.zScrew, I = bw * t * t * t / 12, sig = F * arm * (t / 2) / I, defl = F * arm * arm * arm / (3 * p("petgcfE") * I);
     log.AppendLine(String.Format("  leg bending: {0:F0} N sideways at the frame, arm {1:F1} mm -> {2:F1} MPa, {3:F2} mm deflection (E {4:F0} MPa assumed)", F, arm, sig, defl, p("petgcfE")));
+    if (footMode) {
+      // FOOT: the bracket for a bottom corner, carried on past the end of the housing (+y) to a sole on the table.
+      // Prints sole down. The sole is the lowest thing on the lamp: the corner blocks hang footLift above the table.
+      double fc = p("footClr"), yTop = p("footEndClr"), yBot = a.bumpY + p("footLift"), yThin = a.bumpY + p("footBlockClr");
+      double zRear = -(p("lightH") + p("footBack")), zStep = a.zRearOut - 0.8, zFwd = a.zTop + p("footFwd");
+      double xIn = ex - 0.1, zLegTop = zJ + sc;
+      // leg and pad carried down to the sole, standing fc off the housing (end-cap laps, screw heads)
+      double fs = (fc + 1.1 - fc * a.nX) / a.dX, fz = -sf + fc * a.nZ + fs * a.dZ;
+      PY(new double[][] { new double[] { fc + 1.1, fz }, new double[] { fc + 1.1, zLegTop }, new double[] { xo, zLegTop }, new double[] { xo, zO2 },
+        new double[] { ex + tp * a.nX, ez + tp * a.nZ }, new double[] { ex + fc * a.nX, ez + fc * a.nZ } }, y2 - 0.5, yTop + 0.5, false, "foot leg");
+      PY(Rect(xIn, zRear, xo, zStep), yTop, yBot, false, "sole under the housing");
+      PY(Rect(xIn, zStep - 0.5, xo, zFwd), yThin, yBot, false, "sole under the block");
+      // 45 deg gusset under the part of the leg that sits in the block seat, outside the bumper face of the block
+      double gx = a.bumpX + 0.4, gz = a.zTop - (yThin - y2);
+      PX(new double[][] { new double[] { y2 - 0.5, zLegTop - 0.5 }, new double[] { y2 - 0.5, a.zTop }, new double[] { y2, a.zTop }, new double[] { yThin + 0.5, gz }, new double[] { yThin + 0.5, zLegTop - 0.5 } },
+        gx, xo, false, "seat gusset");
+      // rib behind the wing of the housing, stiffening the tail of the sole
+      double rz = -p("lightWingDepth") - 3, rh = p("footRibH");
+      PX(new double[][] { new double[] { yTop + 0.5, rz }, new double[] { yTop - rh, rz }, new double[] { yTop - rh, rz - 4 }, new double[] { yTop, zRear + 2 }, new double[] { yTop + 0.5, zRear + 2 } },
+        xIn + 8, xIn + 8 + p("footRibT"), false, "tail rib");
+      // the side screw-head relief carried through to the end
+      PX(Rect(y2 - p("relLen"), -p("relZfar"), yTop - 0.2, -p("relZnear")), -1, sc + p("relDepth"), true, "screw head relief to the end");
+      double thin = yBot - yThin, thick = yBot - yTop, wS = xo - xIn, tail = -p("lightWingDepth") - zRear;
+      log.AppendLine(String.Format("  foot: sole {0:F1} wide, z {1:F1}..{2:F1} ({3:F0} long); {4:F1} thick under the housing, {5:F1} under the block; table plane y = {6:F2}", wS, zRear, zFwd, zFwd - zRear, thick, thin, yBot));
+      log.AppendLine(String.Format("  foot: housing end sits {0:F1} above the sole (end screw heads {1:F1}), block rim {2:F1} above it; table to housing end {3:F1}", yTop, p("endHeadH"), p("footBlockClr"), yBot));
+      log.AppendLine(String.Format("  foot: stance front to back {0:F0} mm, {1:F0} behind the housing back, {2:F0} in front of the frame", zFwd - zRear, p("footBack"), p("footFwd")));
+      if (yTop < p("endHeadH") + 0.5) log.AppendLine("  !! sole under 0.5 clear of the end screw heads");
+      if (thin < 2.5) log.AppendLine("  !! sole under the block is under 2.5 thick");
+      if (rz - 4 < zRear + 10) log.AppendLine("  !! no room for the tail rib");
+      if (gz < zLegTop) log.AppendLine("  !! gusset geometry inverted");
+    }
     Finish(path, tag, 0.15, 0.2, 0.35, imgDir, "*Isometric", 7);
   }
 
@@ -480,6 +512,8 @@ public static class Gen {
       if (what == "blockB") { sgn = -1; BuildBlock(dir + SEP + "lb_corner_block_B.SLDPRT", imgDir, "lb_corner_block_B"); }
       if (what == "bracketA") { sgn = 1; BuildBracket(dir + SEP + "lb_bracket_A.SLDPRT", imgDir, "lb_bracket_A"); }
       if (what == "bracketB") { sgn = -1; BuildBracket(dir + SEP + "lb_bracket_B.SLDPRT", imgDir, "lb_bracket_B"); }
+      if (what == "footA") { sgn = 1; footMode = true; BuildBracket(dir + SEP + "lb_foot_A.SLDPRT", imgDir, "lb_foot_A"); }
+      if (what == "footB") { sgn = -1; footMode = true; BuildBracket(dir + SEP + "lb_foot_B.SLDPRT", imgDir, "lb_foot_B"); }
       if (what == "mock") BuildMock(dir + SEP + "lb_mock_corner.SLDPRT", imgDir);
       if (what == "stl") ExportPrint(dir, stlTag, stlParts.Split(','));
     } catch (Exception ex) { log.AppendLine("!! stopped: " + ex.Message + "\n" + ex.StackTrace); }
