@@ -42,9 +42,9 @@
   "brkT": 7.0,
   "brkSeatClr": 0.3,
   "brkScrewSpan": 16.0,
-  "pilotD": 2.7,
-  "pilotDepth": 10.0,
-  "screwClrD": 3.9,
+  "pilotD": 4.3,
+  "pilotDepth": 8.0,
+  "screwClrD": 3.8,
   "jogBelow": 4.0,
   "padT": 7.0,
   "padLen": 36.0,
@@ -93,5 +93,7 @@
   "soleTopR": 2.0,
   "cornerR": 6.0,
   "rimInR": 1.0,
-  "insFlangeH": 1.0
+  "insFlangeH": 1.0,
+  "insHoleFinishD": 4.5,
+  "insLen": 6.4
 }

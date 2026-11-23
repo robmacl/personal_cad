@@ -395,7 +395,12 @@ public static class Gen {
       a.webOutX - p("pilotDepth"), a.webOutX + 1, true, "screw pilots");
     if (a.webOutX - p("pilotDepth") < a.tipX + 1.5) log.AppendLine("  !! screw pilot breaks through the inside of the block");
     if (a.yi - bw / 2 - bc < a.ys + 3) log.AppendLine("  !! bracket seat runs off the end of the side arm");
-    if (a.zScrew - p("pilotD") / 2 - a.zb < 2.5 || a.zSeat - a.zScrew - p("pilotD") / 2 < 2.5) log.AppendLine("  !! under 2.5 mm of plastic around the screw pilots");
+    // The holes take M3 heat-set inserts (McMaster 94180A333 family, 6.4 long, tapered). Modelled undersize; finished with a drill.
+    { double fd = p("insHoleFinishD"), wall = Math.Min(a.zScrew - fd / 2 - a.zb, a.zSeat - a.zScrew - fd / 2);
+      log.AppendLine(String.Format("  insert holes: modelled {0:F1} dia x {1:F1} deep, finish to {2:F1}; {3:F2} of plastic above and below at that size; {4:F1} between the hole end and the inside of the block",
+        p("pilotD"), p("pilotDepth"), fd, wall, a.webOutX - p("pilotDepth") - a.tipX));
+      if (wall < 2.3) log.AppendLine("  !! under 2.3 mm of plastic above or below the insert holes");
+      if (p("pilotDepth") < p("insLen") + 1.0) log.AppendLine("  !! insert hole under 1 mm deeper than the insert"); }
     // ---- corners. The block prints flat on its back, so every edge along z is vertical in the print and can be round.
     {
       double zm = (a.zb + a.zTop) / 2, zr = (a.zSeat + a.zTop) / 2, zt = (a.zb + a.zSeat) / 2, rc = p("cornerR"), rimX = a.bumpX - a.webInX, rimY = a.bumpY - a.webInY;

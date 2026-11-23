@@ -560,3 +560,20 @@ block A at (+X,+Y) and, turned half round, at (-X,-Y); block B at the other two;
 the top, feet at the bottom. Spacers are not in it (hidden in the channels).
 If the assembly file exists the script reopens and rebuilds it; components keep their positions.
 Views in check/assem_*.jpg.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, FRAME SCREWS -> M3 HEAT-SET INSERTS; all print parts tagged 2026-11-23i
+Robert has M3 brass tapered heat-set inserts, the M3 size of McMaster 94180A323 (which is the M2.5).
+Taken to be 94180A333: M3 x 0.5, 6.4 installed length, McMaster hole #13 drill (0.185 in = 4.70)
+at the top with an 8 deg taper. (The short M3, 94180A331, is 3.8 long with a 0.199 in hole. From
+Robert's photo the ones on hand are the long ones. NOT confirmed against the bag.)
+This replaces the #6 thread-forming screws into the corner blocks, which ran in the layer plane.
+- Block: two holes in the seat face, modelled 4.3 dia x 8.0 deep, 16 apart. Finish with a drill and
+  stop bushing to about 4.5 (try one in a scrap first; a straight hole wants to be nearer the
+  small end of the taper). 2.6 of plastic above and below at 4.5; 4.7 beyond the hole end.
+  Set the insert FLUSH with the seat face, not below it: the bracket then clamps on the brass.
+- Bracket and foot: screw holes 3.8 (M3 with 0.4 of float). Leg is 7.0 thick at the seat.
+- FASTENERS NOW: 8 x M3 inserts, 8 x M3 x 12 socket head (7 through the leg, 5 into the insert);
+  4 x M6 x 12 with fender washers of 16 OD or more.
+Rebuilt both hands of block, bracket and foot; no feature errors; overlap 0 in all pairs.
+The assembly file picks the new parts up when it is next opened.
