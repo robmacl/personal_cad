@@ -442,3 +442,18 @@ point should be something that will not mar a finished surface when it slides.
   size on the bench works. Bumpers add their own height; nothing depends on it.
 - Rebuilt both hands, no errors; overlap 0 against mock and block. Print files overwritten (not yet
   printed), still tagged 2026-11-23.
+
+FEET, second revision same day -> print files tagged 2026-11-23b (the untagged-letter ones deleted)
+Robert: thicker, with real diagonal bracing; creep is a concern; a flat sole can rock, so contact
+should be at the front and the back with the middle relieved.
+- Contact at the ends: bumpers near each end of the sole do the relieving (2-3 mm of air under the
+  middle). The printed underside stays flat because it is the bed face; a relief modelled into it
+  would be a 130 mm unsupported bridge. Bare plastic on the table is not the intended use.
+- That makes the sole a beam: about 25 N per foot (assumed, lamp not weighed) landing between
+  bumpers 156 apart. Sole alone: 1.8 MPa sustained, in warm PETG, which would creep.
+- Side brace: a 7.4 thick web outside the side plane of the housing, from the top of the bracket
+  diagonally down to the tail of the sole. Brace + sole 41 deep where the housing ends: 0.43 MPa.
+- Sole thicker downward (footLift 3.5 -> 6): 8.6 under the housing, 5.5 under the block. The housing
+  end is now 12.1 above the table (before bumpers).
+- 105 cm3 each. Still prints sole down with no supports (the brace is a vertical wall).
+- Both hands rebuilt, no errors; overlap 0 against mock and block.

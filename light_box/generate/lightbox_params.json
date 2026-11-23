@@ -70,10 +70,12 @@
   "endHeadH": 2.8,
   "footClr": 1.2,
   "footEndClr": 3.5,
-  "footLift": 3.5,
+  "footLift": 6.0,
   "footBlockClr": 0.5,
   "footBack": 50.0,
   "footFwd": 10.0,
   "footRibH": 16.0,
-  "footRibT": 6.0
+  "footRibT": 6.0,
+  "footBraceEnd": 3.0,
+  "footLoadN": 25.0
 }

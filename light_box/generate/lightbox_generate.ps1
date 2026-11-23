@@ -418,6 +418,17 @@ public static class Gen {
       double rz = -p("lightWingDepth") - 3, rh = p("footRibH");
       PX(new double[][] { new double[] { yTop + 0.5, rz }, new double[] { yTop - rh, rz }, new double[] { yTop - rh, rz - 4 }, new double[] { yTop, zRear + 2 }, new double[] { yTop + 0.5, zRear + 2 } },
         xIn + 8, xIn + 8 + p("footRibT"), false, "tail rib");
+      // diagonal brace: a web outside the side plane of the housing, from the top of the bracket down to the tail of the sole.
+      // With bumpers at the two ends of the sole the lamp's weight lands between them; this makes that span a deep beam (creep).
+      double zW = zO2 + 1, bx0 = fc + 0.3;
+      PX(new double[][] { new double[] { yTop + 0.5, zRear }, new double[] { yTop - p("footBraceEnd"), zRear }, new double[] { y1, zW - 6 }, new double[] { y1, zW }, new double[] { yTop + 0.5, zW } },
+        bx0, xo, false, "side brace");
+      { double wt = xo - bx0, zh = -p("lightWingDepth"), hh = (yTop - y1) * (zh - zRear) / (zW - 6 - zRear) + (yBot - yTop);   // depth of web + sole where the housing ends
+        double span = (a.zTop - 5) - (zRear + 12), la = (a.zTop - 5) - (-p("lightSideFlat")), lb = span - la, W = p("footLoadN");
+        double Mb = W * la * lb / span, Iw = wt * hh * hh * hh / 12, sg = Mb * (hh / 2) / Iw, I0 = (xo - xIn) * Math.Pow(yBot - yTop, 3) / 12, sg0 = Mb * ((yBot - yTop) / 2) / I0;
+        log.AppendLine(String.Format("  foot span between bumpers {0:F0}; {1:F0} N per foot landing {2:F0} from the front one -> {3:F0} N.mm", span, W, la, Mb));
+        log.AppendLine(String.Format("  foot sustained bending: brace + sole {0:F0} deep x {1:F1} -> {2:F2} MPa (sole alone would be {3:F1} MPa)", hh, wt, sg, sg0));
+        if (sg > 1.0) log.AppendLine("  !! sustained stress over 1 MPa: creep"); }
       // the side screw-head relief carried through to the end
       PX(Rect(y2 - p("relLen"), -p("relZfar"), yTop - 0.2, -p("relZnear")), -1, sc + p("relDepth"), true, "screw head relief to the end");
       double thin = yBot - yThin, thick = yBot - yTop, wS = xo - xIn, tail = -p("lightWingDepth") - zRear;
