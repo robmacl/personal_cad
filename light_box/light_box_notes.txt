@@ -431,3 +431,14 @@ NOT CHECKED: anything on the bottom end face other than the 2.8 screw heads (cor
 other fasteners within 40 mm of each side); the space behind the wing back where the rib goes;
 weight and centre of gravity; not sliced or printed.
 STILL TO DESIGN: carry handle (two M6 inserts on the driver channel), mid-span spacers.
+
+FEET, revised same day. Robert: the lamp is tippier backward than forward (the weight is at the
+back; v1 rests on the diffuser frame and the back edge of the driver channel), and every support
+point should be something that will not mar a finished surface when it slides.
+- footBack 30 -> 50, footFwd 25 -> 10. Sole now runs z -142..41.4, 183 long: 50 more backward
+  stance than v1, 10 more forward.
+- The soles are the only things that touch the table (blocks hang 3.5 above it). Sole underside is
+  left flat for stick-on rubber bumpers or felt, one near each end of each sole; no recess, so any
+  size on the bench works. Bumpers add their own height; nothing depends on it.
+- Rebuilt both hands, no errors; overlap 0 against mock and block. Print files overwritten (not yet
+  printed), still tagged 2026-11-23.
