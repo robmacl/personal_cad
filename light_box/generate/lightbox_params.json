@@ -100,5 +100,9 @@
   "lampWeightN": 51.0,
   "frameWeightN": 10.0,
   "bumpIn": 8.0,
-  "bumpH": 3.0
+  "bumpH": 3.0,
+  "legBelowFront": 2.0,
+  "lipClr": 0.1,
+  "revealR": 2.0,
+  "frontCham": 1.0
 }

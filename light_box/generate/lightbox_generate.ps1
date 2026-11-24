@@ -325,7 +325,7 @@ public static class Gen {
   }
 
   class Lay {
-    public double zf, zFront, zRearIn, zRearOut, zb, zSeat, zTop, zScrew;
+    public double zf, zFront, zRearIn, zRearOut, zb, zSeat, zTop, zScrew, zLeg, zLip;
     public double webInX, webOutX, bumpX, tipX, webInY, webOutY, bumpY, tipY;
     public double xe, ys, yi, slopeAng, dX, dZ, nX, nZ, cX, cZ, jog;
   }
@@ -338,7 +338,9 @@ public static class Gen {
     a.zb = a.zRearIn + p("tongueClrZ");                 // underside of block and tongues
     a.zSeat = p("gap") - p("seatClr");                  // top of tongues and body: the back of the diffuser rests here
     a.zTop = a.zFront + p("proud");
-    a.zScrew = (a.zb + a.zSeat) / 2;
+    a.zScrew = (a.zRearOut + a.zSeat) / 2;                // middle of the block body, which now runs back to the channel's rear face
+    a.zLeg = a.zTop - p("legBelowFront");                // top of the bracket leg, short of the front face of the corner cap
+    a.zLip = a.zf + p("lipClr");                         // underside of the lip over the front of the diffuser corner
     a.webInX = (p("diffW") + 2 * p("edgeW") - p("lightW")) / 2;
     a.webOutX = a.webInX + p("chanFloor"); a.bumpX = a.webOutX + p("proud"); a.tipX = a.webInX - p("chanSlotDepth");
     a.webInY = (p("diffL") + 2 * p("edgeL") - p("lightL")) / 2;
@@ -350,7 +352,7 @@ public static class Gen {
     a.nX = -a.dZ; a.nZ = a.dX;                          // out of the angled face
     a.slopeAng = Math.Atan2(rise, run) * 180 / Math.PI;
     a.cX = p("insUpSlope") * a.dX; a.cZ = -p("lightSideFlat") + p("insUpSlope") * a.dZ;
-    a.jog = a.webOutX;
+    a.jog = a.bumpX;                                    // the bracket leg lies on the outside face of the corner cap
     return a;
   }
   static void LayoutReport(Lay a) {
@@ -371,48 +373,51 @@ public static class Gen {
 
   // ---------------------------------------------------------------- corner block: joins two channels, seats the diffuser corner
   static void BuildBlock(string path, string imgDir, string tag) {
+    // A corner CAP: the same C section as the channel, a size bigger on the outside and the front, flush at the back.
+    // The channel ends butt against its arms; its tongues go into their slots; the diffuser corner is inside it, hidden.
+    // From the front only the inner rectangle of the diffuser shows. The bracket leg screws to its outside face.
+    // Prints standing on that outside face (x = bumpX down), so the slot for the sheet is vertical: no support in it.
     if (!OpenOrNew(path)) return;
     Lay a = L(); LayoutReport(a);
     double lt = p("tongueLen"), tx = a.webInX - p("tongueClrX"), ty = a.webInY - p("tongueClrX");
-    // body and tongues, zb..zSeat
-    PZ(new double[][] {
-      new double[] { a.bumpX, a.bumpY },
-      new double[] { a.xe, a.bumpY }, new double[] { a.xe, ty }, new double[] { a.xe - lt, ty }, new double[] { a.xe - lt, a.tipY },
-      new double[] { a.tipX, a.tipY },
-      new double[] { a.tipX, a.ys - lt }, new double[] { tx, a.ys - lt }, new double[] { tx, a.ys }, new double[] { a.bumpX, a.ys } },
-      a.zb, a.zSeat, false, "body and tongues");
-    // rim round the diffuser corner, zb..zTop
-    PZ(new double[][] {
-      new double[] { a.bumpX, a.bumpY },
-      new double[] { a.xe, a.bumpY }, new double[] { a.xe, a.webInY }, new double[] { a.webInX, a.webInY },
-      new double[] { a.webInX, a.ys }, new double[] { a.bumpX, a.ys } },
-      a.zb, a.zTop, false, "rim");
-    // seat for the bracket on the side face
-    double bw = p("brkW"), bc = p("brkSeatClr");
-    PZ(Rect(a.webOutX, a.yi - bw / 2 - bc, a.bumpX + 1, a.yi + bw / 2 + bc), a.zb - 1, a.zTop + 1, true, "bracket seat");
+    double[][] ell = new double[][] { new double[] { a.bumpX, a.bumpY }, new double[] { a.xe, a.bumpY }, new double[] { a.xe, a.tipY }, new double[] { a.tipX, a.tipY },
+      new double[] { a.tipX, a.ys }, new double[] { a.bumpX, a.ys } };
+    PZ(ell, a.zRearOut, a.zSeat, false, "body");
+    PZ(Rect(a.tipX, a.ys - lt, tx, a.ys + 1), a.zb, a.zSeat, false, "side tongue");
+    PZ(Rect(a.xe - lt, a.tipY, a.xe + 1, ty), a.zb, a.zSeat, false, "end tongue");
+    PZ(new double[][] { new double[] { a.bumpX, a.bumpY }, new double[] { a.xe, a.bumpY }, new double[] { a.xe, a.webInY }, new double[] { a.webInX, a.webInY },
+      new double[] { a.webInX, a.ys }, new double[] { a.bumpX, a.ys } }, a.zRearOut, a.zTop, false, "web");
+    PZ(ell, a.zLip, a.zTop, false, "lip");
+    // M3 heat-set inserts, in from the outside face: along the build direction of the print, the good way for an insert
     double sp = p("brkScrewSpan") / 2;
     CX(new double[][] { new double[] { a.yi - sp, a.zScrew, p("pilotD") }, new double[] { a.yi + sp, a.zScrew, p("pilotD") } },
-      a.webOutX - p("pilotDepth"), a.webOutX + 1, true, "screw pilots");
-    if (a.webOutX - p("pilotDepth") < a.tipX + 1.5) log.AppendLine("  !! screw pilot breaks through the inside of the block");
-    if (a.yi - bw / 2 - bc < a.ys + 3) log.AppendLine("  !! bracket seat runs off the end of the side arm");
-    // The holes take M3 heat-set inserts (McMaster 94180A333 family, 6.4 long, tapered). Modelled undersize; finished with a drill.
-    { double fd = p("insHoleFinishD"), wall = Math.Min(a.zScrew - fd / 2 - a.zb, a.zSeat - a.zScrew - fd / 2);
-      log.AppendLine(String.Format("  insert holes: modelled {0:F1} dia x {1:F1} deep, finish to {2:F1}; {3:F2} of plastic above and below at that size; {4:F1} between the hole end and the inside of the block",
-        p("pilotD"), p("pilotDepth"), fd, wall, a.webOutX - p("pilotDepth") - a.tipX));
-      if (wall < 2.3) log.AppendLine("  !! under 2.3 mm of plastic above or below the insert holes");
-      if (p("pilotDepth") < p("insLen") + 1.0) log.AppendLine("  !! insert hole under 1 mm deeper than the insert"); }
-    // ---- corners. The block prints flat on its back, so every edge along z is vertical in the print and can be round.
+      a.bumpX - p("pilotDepth"), a.bumpX + 1, true, "insert holes");
+    { double fd = p("insHoleFinishD"), wall = Math.Min(a.zScrew - fd / 2 - a.zRearOut, a.zSeat - a.zScrew - fd / 2);
+      log.AppendLine(String.Format("  insert holes: modelled {0:F1} dia x {1:F1} deep, finish to {2:F1}; {3:F2} of plastic front and back of the hole; {4:F1} beyond the hole end",
+        p("pilotD"), p("pilotDepth"), fd, wall, a.bumpX - p("pilotDepth") - a.tipX));
+      if (wall < 2.3) log.AppendLine("  !! under 2.3 mm of plastic beside the insert holes");
+      if (p("pilotDepth") < p("insLen") + 1.0) log.AppendLine("  !! insert hole under 1 mm deeper than the insert");
+      if (a.bumpX - p("pilotDepth") < a.tipX + 2) log.AppendLine("  !! insert hole nearly through the block");
+      if (a.yi - p("brkW") / 2 < a.ys + 1) log.AppendLine("  !! bracket runs off the end of the side arm"); }
+    // ---- corners
     {
-      double zm = (a.zb + a.zTop) / 2, zr = (a.zSeat + a.zTop) / 2, zt = (a.zb + a.zSeat) / 2, rc = p("cornerR"), rimX = a.bumpX - a.webInX, rimY = a.bumpY - a.webInY;
-      Fil(rc, "bumper corner", V(a.bumpX, a.bumpY, zm));
-      Fil(p("rimInR"), "inside corner of the rim", V(a.webInX, a.webInY, zr));
-      Fil(Math.Min(2.0, p("proud") - 0.3), "rim ends", V(a.bumpX, a.ys, zm), V(a.xe, a.bumpY, zm));
-      Fil(1.5, "tongue lead-in", V(tx, a.ys - lt, zt), V(a.tipX, a.ys - lt, zt), V(a.xe - lt, ty, zt), V(a.xe - lt, a.tipY, zt));
-      FilC(p("edgeR"), "rim top edge", V(a.bumpX, a.ys + 3, a.zTop), V(a.xe + 3, a.bumpY, a.zTop));
-      Cham(p("bedChamSmall"), "bed face chamfer", V(a.tipX + 3, a.ys - lt / 2, a.zb));
-      double diag = Math.Sqrt(rimX * rimX + rimY * rimY) - rc * (Math.Sqrt(2) - 1) + p("rimInR") * (Math.Sqrt(2) - 1);
-      log.AppendLine(String.Format("  bumper rim {0:F2} x {1:F2} thick; across the rounded corner {2:F1}; rim stands {3:F1} proud of the channel faces", rimX, rimY, diag, p("proud")));
-      if (diag < 3) log.AppendLine("  !! under 3 mm of rim across the bumper corner");
+      double rc = p("cornerR"), cc = 0.586 * rc, zm = (a.zRearOut + a.zTop) / 2;
+      // Bumper corner: a round would be tangent to the bed where the print starts, so it begins as a 45 deg chamfer on the
+      // bed side and runs into the radius (chamfer 0.586 R, then R on its upper edge: the arc ends R from the corner).
+      ChamE(cc, "bumper corner, bed side", V(a.bumpX, a.bumpY, zm));
+      Fil(rc, "bumper corner", V(a.bumpX - cc, a.bumpY, zm));
+      Fil(p("rimInR"), "inside corner of the web", V(a.webInX, a.webInY, (a.zSeat + a.zLip) / 2));
+      Fil(p("revealR"), "reveal corner", V(a.tipX, a.tipY, (a.zLip + a.zTop) / 2));
+      Fil(p("revealR"), "body inside corner", V(a.tipX, a.tipY, (a.zRearOut + a.zSeat) / 2));
+      ChamE(1.5, "arm ends", V(a.bumpX, a.ys, zm), V(a.xe, a.bumpY, zm));
+      double zt = (a.zb + a.zSeat) / 2;
+      ChamE(1.2, "tongue lead-in", V(tx, a.ys - lt, zt), V(a.tipX, a.ys - lt, zt), V(a.xe - lt, ty, zt), V(a.xe - lt, a.tipY, zt));
+      Cham(p("frontCham"), "front face chamfer", V((a.tipX + a.bumpX) / 2, a.ys + 6, a.zTop));
+      Cham(p("bedChamSmall"), "back face chamfer", V((a.tipX + a.bumpX) / 2, a.ys + 6, a.zRearOut));
+      log.AppendLine(String.Format("  corner cap: web {0:F2} thick, lip {1:F2} thick over the sheet, body {2:F2}; slot for the sheet {3:F2} (sheet {4:F2}); front {5:F1} proud of the channel, back flush",
+        a.bumpX - a.webInX, a.zTop - a.zLip, a.zSeat - a.zRearOut, a.zLip - a.zSeat, p("diffT"), p("proud")));
+      log.AppendLine(String.Format("  sheet corner goes {0:F1} / {1:F1} under the lip; reveal lines up with the channel leg tips", a.webInX - p("edgeW") - a.tipX, a.webInY - p("edgeL") - a.tipY));
+      log.AppendLine(String.Format("  prints on its outside face: {0:F0} tall; side tongue hangs {1:F1} above the bed for {2:F0} mm (support there, nowhere else)", a.bumpX - (a.xe - lt), a.bumpX - tx, lt));
     }
     Finish(path, tag, 0.15, 0.2, 0.35, imgDir, "*Isometric", 7);
   }
@@ -443,8 +448,8 @@ public static class Gen {
     int ns = 14;
     for (int i = 0; i <= ns; i++) { double th = -phi + 2 * phi * i / ns; prof.Add(new double[] { crx + rr * (-Math.Cos(th) * bX - Math.Sin(th) * wX), crz + rr * (-Math.Cos(th) * bZ - Math.Sin(th) * wZ) }); }
     double xo = a.jog + t, so = (xo - ox) / a.dX, zO2 = oz + so * a.dZ;   // leg outer face runs straight down to the pad: no outside joggle, a thicker leg
-    prof.Add(new double[] { sc, zJ + sc }); prof.Add(new double[] { a.jog, zJ + a.jog }); prof.Add(new double[] { a.jog, a.zTop });
-    prof.Add(new double[] { xo, a.zTop }); prof.Add(new double[] { xo, zO2 });
+    prof.Add(new double[] { sc, zJ + sc }); prof.Add(new double[] { a.jog, zJ + a.jog }); prof.Add(new double[] { a.jog, a.zLeg });
+    prof.Add(new double[] { xo, a.zLeg }); prof.Add(new double[] { xo, zO2 });
     prof.Add(new double[] { ex + tp * a.nX, ez + tp * a.nZ }); prof.Add(new double[] { ex, ez });
     { double diag = Math.Sqrt((xo - p0x) * (xo - p0x) + (zO2 - p0z) * (zO2 - p0z));
       log.AppendLine(String.Format("  corner relief: r {0:F1}, mouth {1:F2} along each face, {2:F2} deep; plastic left across the corner about {3:F1}", rr, sm, kb + rr, diag - kb - rr));
@@ -498,8 +503,8 @@ public static class Gen {
       double zToe = a.zTop + 0.8, tt = p("footToeTip");
       PX(new double[][] { new double[] { yBot, zToe }, new double[] { yTop, zToe }, new double[] { yTop, zToe + 5 }, new double[] { yBot - tt, zFwd }, new double[] { yBot, zFwd } }, xIn, xo, false, "toe");
       // 45 deg gusset under the part of the leg that sits in the block seat, outside the bumper face of the block
-      double gx = a.bumpX + 0.4, gz = a.zTop - (yThin - y2);
-      PX(new double[][] { new double[] { y2 - 0.5, zLegTop - 0.5 }, new double[] { y2 - 0.5, a.zTop }, new double[] { y2, a.zTop }, new double[] { yThin + 0.5, gz }, new double[] { yThin + 0.5, zLegTop - 0.5 } },
+      double gx = a.bumpX + 0.4, gz = a.zLeg - (yThin - y2);
+      PX(new double[][] { new double[] { y2 - 0.5, zLegTop - 0.5 }, new double[] { y2 - 0.5, a.zLeg }, new double[] { y2, a.zLeg }, new double[] { yThin + 0.5, gz }, new double[] { yThin + 0.5, zLegTop - 0.5 } },
         gx, xo, false, "seat gusset");
       // diagonal brace: a web outside the side plane of the housing, from the top of the bracket down to the tail of the sole.
       // With bumpers at the two ends of the sole the lamp's weight lands between them; this makes that span a deep beam (creep).
@@ -550,16 +555,16 @@ public static class Gen {
       double rv = p("visR"), re = p("edgeR"), xm = (a.jog + xo) / 2, ym = (y1 + y2) / 2;
       double pmx = ex + tp / 2 * a.nX, pmz = ez + tp / 2 * a.nZ;
       if (footMode) {
-        Fil(rv, "leg top corner", V(xm, y1, a.zTop));
+        Fil(rv, "leg top corner", V(xm, y1, a.zLeg));
         Fil(rv, "pad end corner", V(pmx, y1, pmz));
       } else {
-        ChamE(rv, "leg top corners", V(xm, y1, a.zTop), V(xm, y2, a.zTop));
+        ChamE(rv, "leg top corners", V(xm, y1, a.zLeg), V(xm, y2, a.zLeg));
         ChamE(rv, "pad end corners", V(pmx, y1, pmz), V(pmx, y2, pmz));
         Fil(p("bendOutR"), "outside of the bend", V(xo, ym, zO2));
       }
-      Fil(rv * 0.75, "leg top outer edge", V(xo, ym, a.zTop));
+      Fil(rv * 0.75, "leg top outer edge", V(xo, ym, a.zLeg));
       Fil(rv * 0.75, "pad end outer edge", V(ex + tp * a.nX, ym, ez + tp * a.nZ));
-      Fil(re, "leg top inner edge", V(a.jog, ym, a.zTop));
+      Fil(re, "leg top inner edge", V(a.jog, ym, a.zLeg));
       Fil(re, "pad end inner edge", V(ex, ym, ez));
       if (footMode) {
         double fc = p("footClr"), yTop = p("footEndClr"), yBot = a.bumpY + p("footLift"), yThin = a.bumpY + p("footBlockClr");
@@ -577,7 +582,7 @@ public static class Gen {
         Cham(p("bedCham"), "bed face chamfer", V(xIn + 15, yBot, zRear + 40));
       } else {
         // bed-face edges, chained along tangents; the small relief arc at the inside of the bend is left as it is
-        ChamC(p("bedChamSmall"), "bed face chamfer", V(xo, y1, 0), V(sc, y1, -10), V(a.jog, y1, a.zTop - 6),
+        ChamC(p("bedChamSmall"), "bed face chamfer", V(xo, y1, 0), V(sc, y1, -10), V(a.jog, y1, a.zLeg - 6),
           V(ex / 2 + tp * a.nX, y1, (ez - sf) / 2 + tp * a.nZ), V(ex / 2, y1, (ez - sf) / 2));
         FilC(re, "top face edge", V(xo, y2, 0));
         double left = Math.Sqrt((xo - sc) * (xo - sc) + (zO2 + sf) * (zO2 + sf)) - p("cornerRelBack") - p("cornerRelR") - 0.147 * p("bendOutR");
@@ -721,6 +726,16 @@ public static class Gen {
       foreach (string[] v in new string[][] { new string[] { "*Isometric", "7", "assem_iso.jpg" }, new string[] { "*Front", "1", "assem_front.jpg" }, new string[] { "*Back", "2", "assem_back.jpg" },
           new string[] { "*Right", "4", "assem_side.jpg" }, new string[] { "*Bottom", "6", "assem_bottom.jpg" } }) {
         adoc.ShowNamedView2(v[0], int.Parse(v[1])); adoc.ViewZoomtofit2(); adoc.GraphicsRedraw2();
+        adoc.Extension.SaveAs(imgDir + SEP + v[2], 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent | (int)swSaveAsOptions_e.swSaveAsOptions_Copy, null, ref e, ref w);
+      }
+      // close-ups of a top corner and a bottom corner (model metres: two opposite corners of the box to fill the window)
+      double W2m = p("lightW") / 2 * MM, L2m = p("lightL") / 2 * MM;
+      foreach (string[] v in new string[][] { new string[] { "*Front", "1", "corner_top_front.jpg", "1" }, new string[] { "*Back", "2", "corner_top_back.jpg", "1" },
+          new string[] { "*Front", "1", "corner_bottom_front.jpg", "-1" } }) {
+        double sy = double.Parse(v[3]);
+        adoc.ShowNamedView2(v[0], int.Parse(v[1]));
+        adoc.ViewZoomTo2(W2m - 0.085, sy * (L2m - 0.085), -0.06, W2m + 0.03, sy * (L2m + 0.03), 0.05);
+        adoc.GraphicsRedraw2();
         adoc.Extension.SaveAs(imgDir + SEP + v[2], 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent | (int)swSaveAsOptions_e.swSaveAsOptions_Copy, null, ref e, ref w);
       }
       adoc.ShowNamedView2("*Isometric", 7); adoc.ViewZoomtofit2();

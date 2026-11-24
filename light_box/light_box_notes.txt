@@ -598,3 +598,46 @@ The assembly file picks the new parts up when it is next opened.
 - Sole 199 long, 104.6 cm3 per foot. Both hands rebuilt, no errors, overlap 0.
 - Assembly views refreshed (check/assem_*.jpg).
 NOT CHECKED: balance point along the LENGTH (taken as the middle); the 10 N frame figure.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, CORNER CAP (block redesigned) -> all print parts tagged 2026-11-23k
+Robert, looking at the assembly: the corners are not pretty. The diffuser corner shows in front of
+the block, three different things meet there, and the back of the block is not flush with the
+channel. Wanted: only the inner rectangle of the diffuser visible; corner piece lining up with the
+channel ends. He offered a glued-on trim piece as the fallback.
+WHAT IT IS NOW
+The block is a corner CAP with the same C section as the channel: a lip over the front of the
+diffuser corner, a body behind it, a web round the outside.
+- Front: one flat face 2.5 proud of the channel fronts (the bumper when the lamp lies face down),
+  1 mm chamfer all round. Its inner edge lines up with the tips of the channel legs, R2 at the
+  inside corner. The sheet corner goes 10 mm under the lip and cannot be seen.
+- Back: flush with the back of the channel (body 11.4 thick; the tongues step down to 9.75).
+- Outside: 2.5 proud of the channel web, R6 bumper corner.
+- Lip 3.97 thick, slot for the sheet 3.15 (sheet 2.90), web 4.07.
+- No notch for the bracket any more: the rim runs unbroken, and the bracket or foot leg lies on the
+  outside face and stops 2 mm short of the front. The leg therefore joggles out 4.4 instead of 1.9.
+  The two shoulders that located the bracket along the length are gone; the two M3 screws do it.
+- Inserts go in from the outside face, 8 deep, 3.46 of plastic front and back of the hole.
+WHY NOT THE TRIM PIECE: it would work and is the low-risk fallback, but it leaves a seam on the
+front and the diffuser corner held by glue; the cap also puts the inserts the right way to the
+layers (see below) and makes the back flush.
+PRINTING (changed): the cap stands on its OUTSIDE face (the face with the two insert holes), 53 tall.
+- The slot for the sheet is then vertical: no support inside it.
+- The inserts run along the build direction, which was the open risk in the review (screws in the
+  layer plane). Closed.
+- The side tongue hangs 4.3 above the bed for 30 mm: SUPPORT UNDER THAT TONGUE ONLY (the face that
+  gets epoxied to the channel web). Overhang check finds nothing else but the blind hole ends.
+- The bumper corner starts as a 45 deg chamfer on the bed side (3.5 mm) and runs into the R6, so
+  it is not a round tangent to the bed. Slightly asymmetric if you look for it.
+- Weak direction: the end arm (the one that stands up in the print) has its layers across it.
+  It is 24 long with a full C section, then it is inside the aluminium. Plain PETG, 4+ walls.
+ASSEMBLY ORDER (the sheet is now captured at the corners too): epoxy the two bottom caps to the
+bottom end channel and both side channels (a U); spacers in; slide the sheet down the side slots
+into the bottom caps; push the top end channel with its two caps on. Silicone dabs on the sheet.
+CHECKED: both hands of cap, bracket and foot rebuilt, one body, no feature errors; overlap 0 in
+all pairs, with the sheet inside the cap's slot and the channel stubs butting it. 19.5 cm3 per cap,
+20.8 per bracket, 116 per foot. Assembly views and corner close-ups in check/.
+NOT CHECKED: the cap has never been printed in this orientation; hand B mirror check not re-run
+(same code path); whether the sheet's actual corner is square and sharp enough to enter a 3.15 slot
+(a nick or a burr on a cut corner would want a touch with a file).
+A cap printed from an earlier file does not fit the new brackets (the leg sits 2.5 further out).
