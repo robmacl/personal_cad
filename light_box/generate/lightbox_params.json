@@ -69,10 +69,9 @@
   "endHeadH": 2.8,
   "footClr": 1.2,
   "footEndClr": 3.5,
-  "footLift": 6.0,
   "footBlockClr": 0.5,
-  "footBack": 50.0,
-  "footFwd": 25.0,
+  "footBack": 85.0,
+  "footFwd": 10.0,
   "footBraceEnd": 3.0,
   "spacerLen": 60.0,
   "spacerShort": 0.5,
@@ -95,7 +94,6 @@
   "insFlangeH": 1.0,
   "insHoleFinishD": 4.5,
   "insLen": 6.4,
-  "footToeTip": 4.0,
   "cgInset": 4.0,
   "lampWeightN": 51.0,
   "frameWeightN": 10.0,
@@ -104,5 +102,9 @@
   "legBelowFront": 2.0,
   "lipClr": 0.1,
   "revealR": 2.0,
-  "frontCham": 1.0
+  "frontCham": 1.0,
+  "leanDeg": 5.0,
+  "footTailT": 6.0,
+  "v1LeanDeg": 4.5,
+  "toeNoseR": 5.0
 }

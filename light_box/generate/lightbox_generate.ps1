@@ -424,6 +424,9 @@ public static class Gen {
 
   // ---------------------------------------------------------------- bracket: frame corner to the M6 insert on the angled face
   static bool footMode = false;
+  // The lamp leans back leanDeg. In the lamp's own frame the table is then a plane that drops toward the front:
+  // y of the table under a point at z. The sole is footTailT thick at its tail and grows forward.
+  static double Yb(double z) { return p("footEndClr") + p("footTailT") + (z + p("lightH") + p("footBack")) * Math.Tan(p("leanDeg") * Math.PI / 180); }
   static void BuildBracket(string path, string imgDir, string tag) {
     if (!OpenOrNew(path)) return;
     Lay a = L();
@@ -489,8 +492,8 @@ public static class Gen {
     log.AppendLine(String.Format("  leg bending: {0:F0} N sideways at the frame, arm {1:F1} mm -> {2:F1} MPa, {3:F2} mm deflection (E {4:F0} MPa assumed)", F, arm, sig, defl, p("petgcfE")));
     if (footMode) {
       // FOOT: the bracket for a bottom corner, carried on past the end of the housing (+y) to a sole on the table.
-      // Prints sole down. The sole is the lowest thing on the lamp: the corner blocks hang footLift above the table.
-      double fc = p("footClr"), yTop = p("footEndClr"), yBot = a.bumpY + p("footLift"), yThin = a.bumpY + p("footBlockClr");
+      // Prints sole down. The underside is the table plane Yb(z): a wedge, so the lamp leans back leanDeg.
+      double fc = p("footClr"), yTop = p("footEndClr"), yBot = Yb(a.zTop + p("footFwd")) + 2, yThin = a.bumpY + p("footBlockClr");
       double zRear = -(p("lightH") + p("footBack")), zStep = a.zRearOut - 0.8, zFwd = a.zTop + p("footFwd");
       double xIn = ex - 0.1, zLegTop = zJ + sc;
       // leg and pad carried down to the sole, standing fc off the housing (end-cap laps, screw heads)
@@ -499,9 +502,7 @@ public static class Gen {
         new double[] { ex + tp * a.nX, ez + tp * a.nZ }, new double[] { ex + fc * a.nX, ez + fc * a.nZ } }, y2 - 0.5, yTop + 0.5, false, "foot leg");
       PY(Rect(xIn, zRear, xo, zStep), yTop, yBot, false, "sole under the housing");
       PY(Rect(xIn, zStep - 0.5, xo, zFwd), yThin, yBot, false, "sole under the block");
-      // toe: in front of the frame nothing sits above the sole, so it is full depth at the root and tapers to the tip
-      double zToe = a.zTop + 0.8, tt = p("footToeTip");
-      PX(new double[][] { new double[] { yBot, zToe }, new double[] { yTop, zToe }, new double[] { yTop, zToe + 5 }, new double[] { yBot - tt, zFwd }, new double[] { yBot, zFwd } }, xIn, xo, false, "toe");
+      // toe: the sole simply runs on footFwd in front of the cap at the same level; its front top edge is rounded off below
       // 45 deg gusset under the part of the leg that sits in the block seat, outside the bumper face of the block
       double gx = a.bumpX + 0.4, gz = a.zLeg - (yThin - y2);
       PX(new double[][] { new double[] { y2 - 0.5, zLegTop - 0.5 }, new double[] { y2 - 0.5, a.zLeg }, new double[] { y2, a.zLeg }, new double[] { yThin + 0.5, gz }, new double[] { yThin + 0.5, zLegTop - 0.5 } },
@@ -516,34 +517,42 @@ public static class Gen {
       PX(new double[][] { new double[] { yTop + 0.5, zRear + rT }, new double[] { yTop - p("footBraceEnd"), zRear + rT }, new double[] { yCut, zC },
         new double[] { y1, zW - 6 }, new double[] { y1, zW }, new double[] { yTop + 0.5, zW } },
         bx0, xo, false, "side brace");
-      { double wt = xo - bx0, zh = -p("lightWingDepth"), hh = (yBot - yCut) + (y1 < yCut && zh > zC ? (yCut - y1) * (zh - zC) / (zW - 6 - zC) : 0);   // depth of web + sole where the housing ends
+      { double wt = xo - bx0, zh = -p("lightWingDepth"), hh = (Yb(zh) - yCut) + (y1 < yCut && zh > zC ? (yCut - y1) * (zh - zC) / (zW - 6 - zC) : 0);   // depth of web + sole where the housing ends
         // Balance: the fixture alone balances cgInset in front of the wing back (Robert, on a straightedge). The frame and
         // diffuser pull the centre of gravity of the whole lamp forward. Bumpers sit bumpIn from each end of the sole.
         double bi = p("bumpIn"), wFix = p("lampWeightN") - p("frameWeightN"), zFix = -(p("lightWingDepth") - p("cgInset")), zFrm = (a.zRearOut + a.zFront) / 2;
-        double zcg = (wFix * zFix + p("frameWeightN") * zFrm) / p("lampWeightN"), hcg = p("lightL") / 2 + yBot + p("bumpH");
-        double zBf = zFwd - bi, zBr = zRear + bi;
-        log.AppendLine(String.Format("  balance: fixture at z {0:F0}, frame at z {1:F0} -> whole lamp at z {2:F0}; height of centre {3:F0} above the table (taken at mid-length)", zFix, zFrm, zcg, hcg));
-        log.AppendLine(String.Format("  tips BACKWARD at {0:F1} deg ({1:F0} mm of stance behind the centre), FORWARD at {2:F1} deg ({3:F0} mm in front)",
-          Math.Atan2(zcg - zBr, hcg) * 180 / Math.PI, zcg - zBr, Math.Atan2(zBf - zcg, hcg) * 180 / Math.PI, zBf - zcg));
-        { double v1b = Math.Atan2(zcg + p("lightH"), p("lightL") / 2) * 180 / Math.PI, v1f = Math.Atan2(a.zFront - zcg, p("lightL") / 2) * 180 / Math.PI;
-          log.AppendLine(String.Format("  for comparison, standing on the frame front and the back of the driver channel as v1 does: {0:F1} deg backward, {1:F1} deg forward", v1b, v1f)); }
-        double span = zBf - zBr, la = zBf - zcg, lb = span - la, W = p("lampWeightN") / 2;
-        { double Rf = W * lb / span, toeArm = Math.Max(0, zBf - a.zTop), Zt = (xo - xIn) * Math.Pow(yBot - yTop, 2) / 6;
-          log.AppendLine(String.Format("  toe: front bumper carries {0:F0} N, {1:F0} mm in front of the block -> {2:F2} MPa sustained at the root ({3:F1} deep there)", Rf, toeArm, Rf * toeArm / Zt, yBot - yTop)); }
+        double zcg = (wFix * zFix + p("frameWeightN") * zFrm) / p("lampWeightN"), ycg = -p("lightL") / 2, th = p("leanDeg") * Math.PI / 180, cth = Math.Cos(th), sth = Math.Sin(th);
+        double zBf = zFwd - bi, zBr = zRear + bi, yBf = Yb(zBf) + p("bumpH"), yBr = Yb(zBr) + p("bumpH");
+        // along the table (t) and up from it (u), in the lamp's z, y: t = (cos, sin), u = (sin, -cos)
+        double dR = (zcg - zBr) * cth + (ycg - yBr) * sth, hR = (zcg - zBr) * sth - (ycg - yBr) * cth;
+        double dF = -((zcg - zBf) * cth + (ycg - yBf) * sth), hF = (zcg - zBf) * sth - (ycg - yBf) * cth;
+        log.AppendLine(String.Format("  balance: fixture at z {0:F0}, frame at z {1:F0} -> whole lamp at z {2:F0}; centre {3:F0} above the table (taken at mid-length); lamp leans back {4:F1} deg", zFix, zFrm, zcg, hR, p("leanDeg")));
+        log.AppendLine(String.Format("  tips BACKWARD after a further {0:F1} deg ({1:F0} mm of stance behind the centre), FORWARD after {2:F1} deg ({3:F0} mm in front)",
+          Math.Atan2(dR, hR) * 180 / Math.PI, dR, Math.Atan2(dF, hF) * 180 / Math.PI, dF));
+        { double v1b = Math.Atan2(zcg + p("lightH"), p("lightL") / 2) * 180 / Math.PI, v1f = Math.Atan2(a.zFront - zcg, p("lightL") / 2) * 180 / Math.PI, v1l = p("v1LeanDeg");
+          log.AppendLine(String.Format("  for comparison, v1 stands on its frame front and the back of the driver channel, leaning back {0:F1} deg: {1:F1} deg backward, {2:F1} deg forward", v1l, v1b - v1l, v1f + v1l)); }
+        double span = dR + dF, la = dF, lb = dR, W = p("lampWeightN") / 2;
+        { double Rf = W * lb / span, toeArm = Math.Max(0, zBf - a.zTop), Zt = (xo - xIn) * Math.Pow(Yb(a.zTop) - yThin, 2) / 6;
+          log.AppendLine(String.Format("  toe: front bumper carries {0:F0} N, {1:F0} mm in front of the block -> {2:F2} MPa sustained at the root ({3:F1} deep there)", Rf, toeArm, Rf * toeArm / Zt, Yb(a.zTop) - yThin)); }
         // Section where the housing ends (the brace is at its shallowest under load there): sole as flange, brace as web.
         double Mb = W * la * lb / span, Mh = W * la / span * (zh - zBr);
-        double tf = yBot - yTop, bf = xo - xIn, hw = hh - tf, Af = bf * tf, Aw = wt * hw, yc = (Af * tf / 2 + Aw * (tf + hw / 2)) / (Af + Aw);
+        double tf = Yb(zh) - yTop, bf = xo - xIn, hw = hh - tf, Af = bf * tf, Aw = wt * hw, yc = (Af * tf / 2 + Aw * (tf + hw / 2)) / (Af + Aw);
         double It = bf * tf * tf * tf / 12 + Af * (yc - tf / 2) * (yc - tf / 2) + wt * hw * hw * hw / 12 + Aw * (tf + hw / 2 - yc) * (tf + hw / 2 - yc);
         double sg = Mh * Math.Max(yc, hh - yc) / It, sg0 = Mb * (tf / 2) / (bf * tf * tf * tf / 12);
         log.AppendLine(String.Format("  foot span between bumpers {0:F0}; {1:F0} N per foot landing {2:F0} from the front one -> {3:F0} N.mm at the load, {4:F0} where the housing ends", span, W, la, Mb, Mh));
         log.AppendLine(String.Format("  foot sustained bending where the housing ends: sole + brace {0:F0} deep -> {1:F2} MPa (sole alone, at the load, would be {2:F1} MPa)", hh, sg, sg0));
         if (sg > 1.0) log.AppendLine("  !! sustained stress over 1 MPa: creep"); }
       log.AppendLine(String.Format("  M6 line of sight: tool axis crosses the brace at z {0:F0}; brace top held {1:F0} below the axis from z {2:F0} back to the tail", zLos, tR, zC));
+      // everything below the table plane comes off: this face is the bed face of the print
+      PX(new double[][] { new double[] { Yb(zRear - 5), zRear - 5 }, new double[] { Yb(zFwd + 5), zFwd + 5 }, new double[] { yBot + 5, zFwd + 5 }, new double[] { yBot + 5, zRear - 5 } },
+        xIn - 5, xo + 5, true, "table plane");
       // the side screw-head relief carried through to the end
       PX(Rect(y2 - p("relLen"), -p("relZfar"), yTop - 0.2, -p("relZnear")), -1, sc + p("relDepth"), true, "screw head relief to the end");
-      double thin = yBot - yThin, thick = yBot - yTop, wS = xo - xIn, tail = -p("lightWingDepth") - zRear;
-      log.AppendLine(String.Format("  foot: sole {0:F1} wide, z {1:F1}..{2:F1} ({3:F0} long); {4:F1} thick under the housing, {5:F1} under the block; table plane y = {6:F2}", wS, zRear, zFwd, zFwd - zRear, thick, thin, yBot));
-      log.AppendLine(String.Format("  foot: housing end sits {0:F1} above the sole (end screw heads {1:F1}), block rim {2:F1} above it; table to housing end {3:F1}", yTop, p("endHeadH"), p("footBlockClr"), yBot));
+      double thin = Yb(zStep) - yThin, wS = xo - xIn;
+      log.AppendLine(String.Format("  foot: sole {0:F1} wide, z {1:F1}..{2:F1} ({3:F0} long); a wedge {4:F1} thick at the tail, {5:F1} under the front of the housing, {6:F1} at the toe root",
+        wS, zRear, zFwd, zFwd - zRear, Yb(zRear) - yTop, Yb(0) - yTop, Yb(a.zTop) - yThin));
+      log.AppendLine(String.Format("  foot: housing end sits {0:F1} above the sole (end screw heads {1:F1}), cap {2:F1} above it; the housing end is {3:F1} off the table at its back edge and {4:F1} at its front",
+        yTop, p("endHeadH"), p("footBlockClr"), Yb(-p("lightH")), Yb(0)));
       log.AppendLine(String.Format("  foot: stance front to back {0:F0} mm, {1:F0} behind the housing back, {2:F0} in front of the frame", zFwd - zRear, p("footBack"), p("footFwd")));
       if (yTop < p("endHeadH") + 0.5) log.AppendLine("  !! sole under 0.5 clear of the end screw heads");
       if (thin < 2.5) log.AppendLine("  !! sole under the block is under 2.5 thick");
@@ -567,19 +576,19 @@ public static class Gen {
       Fil(re, "leg top inner edge", V(a.jog, ym, a.zLeg));
       Fil(re, "pad end inner edge", V(ex, ym, ez));
       if (footMode) {
-        double fc = p("footClr"), yTop = p("footEndClr"), yBot = a.bumpY + p("footLift"), yThin = a.bumpY + p("footBlockClr");
+        double fc = p("footClr"), yTop = p("footEndClr"), yThin = a.bumpY + p("footBlockClr");
         double zRear = -(p("lightH") + p("footBack")), zFwd = a.zTop + p("footFwd"), xIn = ex - 0.1, bx0 = fc + 0.3;
         double fs = (fc + 0.3 - fc * a.nX) / a.dX, fz = -sf + fc * a.nZ + fs * a.dZ, rT = p("footCornerR");
         double s0 = (bx0 - a.cX) / a.nX, zC = a.cZ + s0 * a.nZ + p("toolR") / Math.Abs(a.nX), yCut = a.yi + p("toolR"), zW = zO2 + 1;
-        Fil(rT, "sole tail corners", V(xo, (yTop + yBot) / 2, zRear), V(xIn, (yTop + yBot) / 2, zRear));
-        Fil(p("footFrontR"), "sole front corners", V(xo, (yThin + yBot) / 2, zFwd), V(xIn, (yThin + yBot) / 2, zFwd));
+        Fil(rT, "sole tail corners", V(xo, yTop + 2, zRear), V(xIn, yTop + 2, zRear));
+        Fil(p("footFrontR"), "sole front corners", V(xo, Yb(zFwd) - 3, zFwd), V(xIn, Yb(zFwd) - 3, zFwd));
         Fil(p("braceKinkR"), "brace kink", V((bx0 + xo) / 2, yCut, zC));
         Fil(rv, "brace top corner", V((bx0 + xo) / 2, y1, zW - 6));
         Fil(p("insideR"), "inside corner of the foot leg", V(fc + 0.3, (y2 + yTop) / 2, fz));
         Fil(p("insideR"), "brace to sole", V(bx0, yTop, zC - 20));
         FilC(p("soleTopR"), "sole top edge, tail", V(xIn, yTop, zRear + 40));
-        { double zt0 = a.zTop + 5.8, tt = p("footToeTip"); FilC(p("soleTopR"), "toe top edge", V(xIn, (yTop + yBot - tt) / 2, (zt0 + zFwd) / 2)); }
-        Cham(p("bedCham"), "bed face chamfer", V(xIn + 15, yBot, zRear + 40));
+        FilC(p("toeNoseR"), "toe top edge", V((xIn + xo) / 2, yThin, zFwd));
+        Cham(p("bedCham"), "bed face chamfer", V(xIn + 15, Yb(zRear + 40), zRear + 40));
       } else {
         // bed-face edges, chained along tangents; the small relief arc at the inside of the bend is left as it is
         ChamC(p("bedChamSmall"), "bed face chamfer", V(xo, y1, 0), V(sc, y1, -10), V(a.jog, y1, a.zLeg - 6),

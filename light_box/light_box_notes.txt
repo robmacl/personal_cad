@@ -646,3 +646,27 @@ ASSEMBLY, later the same day: the 8 spacers are now in lb_light_box.SLDASM (3 pe
 y -131, 0, +131; 1 per end channel, centred). They are inside the slots behind the diffuser, so
 they show only with a channel hidden or in a section view. Positions checked against the slot:
 inside it in x, y and z. The script adds them to an existing assembly that has none.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, LEAN BACK 5 DEG -> feet tagged 2026-11-23l
+Robert: v1 leans back 4.5 deg as it sits; phototherapy boxes are usually angled back or adjustable
+that way. In use the likelier fall is backward (the person is in front of it, nothing behind but
+table). Build in an angle, say 5 deg.
+- leanDeg 5. The underside of each sole is the table plane in the lamp's own frame: a wedge,
+  6.0 thick at the tail, 21.5 under the front of the housing. The housing end stands 16.9 off the
+  table at its back edge and 25.0 at its front. That flat wedge face is the bed face of the print.
+- Leaning back spends backward margin, so the tail is longer and the toe shorter:
+  footBack 50 -> 85, footFwd 25 -> 10. Sole 219 long (fits the 256 bed), 42 wide.
+- Tip margins beyond the 5 deg lean: BACKWARD a further 18.3 deg, FORWARD 16.4 deg.
+  v1 worked the same way at its 4.5 deg lean: 6.6 backward, 16.2 forward. That is the "tippier
+  backward" Robert sees, and it settles the disagreement in the earlier balance note: the upright
+  sum had ignored v1's lean.
+- Toe: no separate raised toe now; the sole runs 10 in front of the cap at the same level, R5 on
+  its top front edge.
+- Sustained bending where the housing ends 0.42 MPa. 183 cm3 per foot (mostly wedge; ordinary
+  infill is fine, it is in compression).
+- Both hands rebuilt, no errors; overlap 0; overhangs as before (ledges 1 to 2 wide, two short
+  bridges). The overhang check turns the foot mesh by leanDeg first.
+- The assembly still draws the lamp upright with the wedge under it; it does not tilt the model.
+NOT CHECKED: that 5 deg is the angle wanted in use (it is one number, leanDeg); the frame weight
+estimate; centre of gravity along the length.

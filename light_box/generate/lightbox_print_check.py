@@ -57,13 +57,21 @@ print('OVERHANGS (facing the bed at more than 45 deg from vertical, not on the b
 for name, (axis, sign) in ORIENT.items():
     f = os.path.join(src, name + '.STL')
     if not os.path.exists(f): continue
-    groups, height = overhang(load(f), axis, sign)
+    m = load(f)
+    if name.startswith('lb_foot'):
+        # the foot prints on its wedge underside: turn the mesh by the lean so that face is square to the build axis
+        import json
+        th = np.radians(json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lightbox_params.json')))['leanDeg'])
+        y, z = m[:, :, 1].copy(), m[:, :, 2].copy()
+        m = m.copy(); m[:, :, 1] = y * np.cos(th) - z * np.sin(th); m[:, :, 2] = y * np.sin(th) + z * np.cos(th)
+    groups, height = overhang(m, axis, sign)
     tot = sum(g[1] for g in groups)
     print('%-18s print height %.1f, overhang area %.0f mm2' % (name, height, tot))
     for k, ar, flat, ext, c in groups:
         if ar < 3: continue
         print('    at %5.1f above the bed: %6.1f mm2 %s, spread %.0f x %.0f, near x %.0f y %.0f z %.0f' % (k, ar, 'flat' if flat else 'sloped', ext[0], ext[1], c[0], c[1], c[2]))
 
+if len(sys.argv) > 2 and sys.argv[2] == 'fast': sys.exit(0)   # the mirror check takes several minutes
 print('\nHAND B AGAINST THE MIRROR OF HAND A (volume in one but not the other, 0.5 mm grid)')
 for base in ('lb_corner_block', 'lb_bracket', 'lb_foot'):
     fa, fb = os.path.join(src, base + '_A.STL'), os.path.join(src, base + '_B.STL')
