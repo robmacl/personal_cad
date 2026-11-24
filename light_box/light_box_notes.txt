@@ -641,3 +641,8 @@ NOT CHECKED: the cap has never been printed in this orientation; hand B mirror c
 (same code path); whether the sheet's actual corner is square and sharp enough to enter a 3.15 slot
 (a nick or a burr on a cut corner would want a touch with a file).
 A cap printed from an earlier file does not fit the new brackets (the leg sits 2.5 further out).
+
+ASSEMBLY, later the same day: the 8 spacers are now in lb_light_box.SLDASM (3 per side channel at
+y -131, 0, +131; 1 per end channel, centred). They are inside the slots behind the diffuser, so
+they show only with a channel hidden or in a section view. Positions checked against the slot:
+inside it in x, y and z. The script adds them to an existing assembly that has none.

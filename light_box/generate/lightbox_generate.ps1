@@ -721,6 +721,31 @@ public static class Gen {
       bool ok = adoc.Extension.SaveAs(path, 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref e, ref w);
       log.AppendLine("assembly: saved " + ok + (e != 0 ? " err " + e : ""));
     }
+    // spacers in the assembly: added to an existing file too, if it has none. They sit inside the channel slots behind
+    // the diffuser, so they only show with a channel hidden or in a section view.
+    {
+      AssemblyDoc asm2 = (AssemblyDoc)adoc; Lay a = L();
+      int have = 0; object[] comps = (object[])asm2.GetComponents(true);
+      if (comps != null) foreach (object o in comps) if (((Component2)o).Name2.StartsWith("lb_spacer")) have++;
+      if (have == 0) {
+        string sp = dir + SEP + "lb_spacer.SLDPRT";
+        double len = p("spacerLen"), xw = W2 + a.webInX - 0.1, yw = L2 + a.webInY - 0.1;
+        int ns = (int)p("spacerPerSide"), ne = (int)p("spacerPerEnd");
+        double freeS = 2 * (L2 + a.ys - p("tongueLen")), gapS = (freeS - ns * len) / (ns + 1), freeE = 2 * (W2 + a.xe - p("tongueLen")), gapE = (freeE - ne * len) / (ne + 1);
+        for (int i = 0; i < ns; i++) {
+          double y0 = -freeS / 2 + gapS + i * (len + gapS);           // start of this spacer along the side channel
+          Place(asm2, adoc, sp, Xf(new double[] { 0, 1, 0, -1, 0, 0, 0, 0, 1 }, xw, y0, a.zb));          // +X side: spacer x up the channel, its y into the slot
+          Place(asm2, adoc, sp, Xf(new double[] { 0, -1, 0, 1, 0, 0, 0, 0, 1 }, -xw, -y0, a.zb));        // -X side
+        }
+        for (int i = 0; i < ne; i++) {
+          double x0 = -freeE / 2 + gapE + i * (len + gapE);
+          Place(asm2, adoc, sp, Xf(new double[] { -1, 0, 0, 0, -1, 0, 0, 0, 1 }, -x0, yw, a.zb));        // +Y end
+          Place(asm2, adoc, sp, Xf(new double[] { 1, 0, 0, 0, 1, 0, 0, 0, 1 }, x0, -yw, a.zb));          // -Y end
+        }
+        adoc.ClearSelection2(true); adoc.EditRebuild3();
+        log.AppendLine("assembly: " + (2 * ns + 2 * ne) + " spacers added");
+      } else log.AppendLine("assembly: " + have + " spacers already in it");
+    }
     if (imgDir != "") {
       try { ((ModelView)adoc.ActiveView).FrameState = (int)swWindowState_e.swWindowMaximized; } catch (Exception) { }   // a reopened assembly comes up in a small window
       foreach (string[] v in new string[][] { new string[] { "*Isometric", "7", "assem_iso.jpg" }, new string[] { "*Front", "1", "assem_front.jpg" }, new string[] { "*Back", "2", "assem_back.jpg" },
