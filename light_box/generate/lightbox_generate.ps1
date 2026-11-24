@@ -1,6 +1,6 @@
 # Generates the light box v2 printed parts in a running SolidWorks session.
 #
-#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|footA|footB|spacer|mock|housing|diffuser|chanSide|chanEnd|assembly] [-ImgDir <dir>]
+#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|footA|footB|spacer|handleA|handleB|bar|mock|housing|diffuser|chanSide|chanEnd|assembly] [-ImgDir <dir>]
 #   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 -What stl -StlTag <tag> [-StlParts a,b,...]
 #
 # The second form writes fine STL print files to ../stl/lb_<part>_<tag>.STL.
@@ -541,7 +541,20 @@ public static class Gen {
         double sg = Mh * Math.Max(yc, hh - yc) / It, sg0 = Mb * (tf / 2) / (bf * tf * tf * tf / 12);
         log.AppendLine(String.Format("  foot span between bumpers {0:F0}; {1:F0} N per foot landing {2:F0} from the front one -> {3:F0} N.mm at the load, {4:F0} where the housing ends", span, W, la, Mb, Mh));
         log.AppendLine(String.Format("  foot sustained bending where the housing ends: sole + brace {0:F0} deep -> {1:F2} MPa (sole alone, at the load, would be {2:F1} MPa)", hh, sg, sg0));
-        if (sg > 1.0) log.AppendLine("  !! sustained stress over 1 MPa: creep"); }
+        // The tail is a cantilever from where the housing ends back to the rear bumper, and both the wedge and the brace
+        // thin out along it: find the worst section rather than trust the one at the housing.
+        double worst = 0, zWorst = 0, Rr = W * la / span;
+        for (double zz = zBr + 2; zz <= zh; zz += 2) {
+          double top = zz >= zC ? yCut + (y1 - yCut) * Math.Min(1, (zz - zC) / (zW - 6 - zC)) : (zz < zRear + rT ? yTop : (yTop - p("footBraceEnd")) + (yCut - (yTop - p("footBraceEnd"))) * (zz - zRear - rT) / (zC - zRear - rT));
+          double f1 = Yb(zz) - yTop, w1 = Math.Max(0, yTop - top), A1 = bf * f1, A2 = wt * w1, c1 = (A1 * f1 / 2 + A2 * (f1 + w1 / 2)) / (A1 + A2);
+          double I1 = bf * f1 * f1 * f1 / 12 + A1 * (c1 - f1 / 2) * (c1 - f1 / 2) + wt * w1 * w1 * w1 / 12 + A2 * (f1 + w1 / 2 - c1) * (f1 + w1 / 2 - c1);
+          double s1 = Rr * (zz - zBr) * Math.Max(c1, f1 + w1 - c1) / I1;
+          if (s1 > worst) { worst = s1; zWorst = zz; }
+        }
+        double tipE = Rr * Math.Pow(zh - zBr, 3) / (3 * p("petgE") * It);
+        log.AppendLine(String.Format("  creep: rear bumper carries {0:F1} N, front {1:F1} N per foot; worst sustained stress along the tail {2:F2} MPa at z {3:F0}", Rr, W - Rr, worst, zWorst));
+        log.AppendLine(String.Format("  creep: tail deflects about {0:F2} mm at the bumper when new (E {1:F0}); three times that over years would add {2:F2} deg of lean", tipE, p("petgE"), Math.Atan2(3 * tipE, span) * 180 / Math.PI));
+        if (worst > 1.0) log.AppendLine("  !! sustained stress over 1 MPa: creep"); }
       log.AppendLine(String.Format("  M6 line of sight: tool axis crosses the brace at z {0:F0}; brace top held {1:F0} below the axis from z {2:F0} back to the tail", zLos, tR, zC));
       // everything below the table plane comes off: this face is the bed face of the print
       PX(new double[][] { new double[] { Yb(zRear - 5), zRear - 5 }, new double[] { Yb(zFwd + 5), zFwd + 5 }, new double[] { yBot + 5, zFwd + 5 }, new double[] { yBot + 5, zRear - 5 } },
@@ -755,6 +768,17 @@ public static class Gen {
         log.AppendLine("assembly: " + (2 * ns + 2 * ne) + " spacers added");
       } else log.AppendLine("assembly: " + have + " spacers already in it");
     }
+    {
+      AssemblyDoc asm3 = (AssemblyDoc)adoc; int have = 0; object[] comps = (object[])asm3.GetComponents(true);
+      if (comps != null) foreach (object o in comps) if (((Component2)o).Name2.StartsWith("lb_handle")) have++;
+      if (have == 0 && System.IO.File.Exists(dir + SEP + "lb_handle_A.SLDPRT")) {
+        Place(asm3, adoc, dir + SEP + "lb_handle_A.SLDPRT", Xf(I, W2, L2, 0));
+        Place(asm3, adoc, dir + SEP + "lb_handle_B.SLDPRT", Xf(I, -W2, L2, 0));
+        Place(asm3, adoc, dir + SEP + "lb_handle_bar.SLDPRT", Xf(I, 0, 0, 0));
+        adoc.ClearSelection2(true); adoc.EditRebuild3();
+        log.AppendLine("assembly: handle added");
+      }
+    }
     if (imgDir != "") {
       try { ((ModelView)adoc.ActiveView).FrameState = (int)swWindowState_e.swWindowMaximized; } catch (Exception) { }   // a reopened assembly comes up in a small window
       foreach (string[] v in new string[][] { new string[] { "*Isometric", "7", "assem_iso.jpg" }, new string[] { "*Front", "1", "assem_front.jpg" }, new string[] { "*Back", "2", "assem_back.jpg" },
@@ -775,6 +799,47 @@ public static class Gen {
       adoc.ShowNamedView2("*Isometric", 7); adoc.ViewZoomtofit2();
     }
     adoc.Save3((int)swSaveAsOptions_e.swSaveAsOptions_Silent, ref e, ref w);
+  }
+
+  // ---------------------------------------------------------------- carry handle: two cheeks and a round bar across the top
+  // A cheek is a flat plate on the outside of a TOP bracket's leg, held by the same two M3 screws (longer) that hold the
+  // leg to the corner cap. A lip hooks under the bottom of the leg, so the lift goes cheek -> leg -> pad -> M6 insert in
+  // the housing; the screws only hold the cheek on. A stem runs up past the top end to a boss with a blind socket.
+  // The bar (dowel or tube, gripD) sits in the two sockets and is trapped between the cheeks: no fastener on it.
+  // Corner-local frame of a top corner (+y is up, past the top end). Prints outside face down: no supports.
+  static void BuildHandle(string path, string imgDir, string tag) {
+    if (!OpenOrNew(path)) return;
+    Lay a = L();
+    double t = p("brkT"), bw = p("brkW"), y1 = a.yi - bw / 2, y2 = a.yi + bw / 2, xo = a.jog + t;
+    double ct = p("cheekT"), yBar = p("handleUp"), zBar = p("handleZ"), gd = p("gripD"), rb = gd / 2 + p("bossWall"), bl = p("bossLen");
+    double zA = a.zLeg - bw, zB = a.zLeg, yL = y1 - p("lipH") - 0.3, sp = p("brkScrewSpan") / 2;
+    PX(new double[][] { new double[] { yL, zA }, new double[] { yL, zB }, new double[] { y2 + 10, zB }, new double[] { yBar, zBar + rb }, new double[] { yBar, zBar - rb }, new double[] { y2 - 6, zA } },
+      xo, xo + ct, false, "cheek");
+    CX(new double[][] { new double[] { yBar, zBar, 2 * rb } }, xo - bl, xo + ct, false, "boss");
+    PX(Rect(yL, zA, y1 - 0.3, zB), xo - p("lipDeep"), xo + 0.5, false, "lip under the leg");
+    CX(new double[][] { new double[] { yBar, zBar, gd + p("gripClr") } }, xo - bl - 1, xo + ct - p("socketFloor"), true, "socket");
+    CX(new double[][] { new double[] { a.yi - sp, a.zScrew, p("screwClrD") }, new double[] { a.yi + sp, a.zScrew, p("screwClrD") } }, xo - 1, xo + ct + 1, true, "screw holes");
+    Fil(4, "cheek corners", V(xo + ct / 2, yL, zA), V(xo + ct / 2, yL, zB));
+    Fil(12, "stem blend", V(xo + ct / 2, y2 + 10, zB), V(xo + ct / 2, y2 - 6, zA));
+    Fil(p("insideR"), "boss root", V(xo, yBar - rb, zBar));
+    Cham(p("bedChamSmall"), "bed face chamfer", V(xo + ct, a.yi, a.zScrew + 5));
+    double barLen = p("lightW") + 2 * (xo + ct - p("socketFloor")) - 2 * p("barEndClr"), depth = bl + ct - p("socketFloor");
+    double F = p("lampWeightN") / 2, arm = Math.Max(0, zA - zBar), S = F * arm / Math.Max(1, a.zScrew - zA);
+    log.AppendLine(String.Format("  handle: bar {0:F1} dia, CUT {1:F0} mm ({2:F2} in); sockets {3:F1} deep; bar centre {4:F0} above the top end, {5:F0} behind the front of the housing", gd, barLen, barLen / 25.4, depth, yBar, -zBar));
+    log.AppendLine(String.Format("  handle: {0:F0} mm of finger room between the bar and the top of the corner caps; boss {1:F1} dia", yBar - gd / 2 - a.bumpY, 2 * rb));
+    log.AppendLine(String.Format("  handle: {0:F1} N per cheek at rest; lip takes it under the leg; bar is {1:F0} behind the lip, so the two M3 see {2:F0} N of shear between them ({3:F0} N at 3 g)", F, arm, S, 3 * S));
+    log.AppendLine(String.Format("  handle: screws are M3 x {0:F0} here ({1:F0} cheek + {2:F0} leg + 5 in the insert); lamp hangs {3:F1} deg off plumb from the bar", Math.Ceiling((ct + t + 5) / 2) * 2, ct, t,
+      Math.Atan2(Math.Abs(zBar + 33), p("lightL") / 2 + yBar) * 180 / Math.PI));
+    if (yBar - gd / 2 - a.bumpY < 28) log.AppendLine("  !! under 28 mm of finger room under the bar");
+    if (xo - p("lipDeep") < a.bumpX + 0.5) log.AppendLine("  !! lip reaches the corner cap");
+    Finish(path, tag, 0.15, 0.2, 0.35, imgDir, "*Isometric", 7);
+  }
+  static void BuildBar(string path, string imgDir) {
+    if (!OpenOrNew(path)) return;
+    Lay a = L(); sgn = 1;
+    double xo = a.jog + p("brkT"), half = p("lightW") / 2 + xo + p("cheekT") - p("socketFloor") - p("barEndClr");
+    CX(new double[][] { new double[] { p("lightL") / 2 + p("handleUp"), p("handleZ"), p("gripD") } }, -half, half, false, "bar");   // stand-in, global frame
+    Finish(path, "lb_handle_bar", 0.72, 0.6, 0.42, imgDir, "*Isometric", 7);
   }
 
   // ---------------------------------------------------------------- fit gauge
@@ -846,6 +911,9 @@ public static class Gen {
       if (what == "chanSide") BuildChannel(dir + SEP + "lb_channel_side.SLDPRT", imgDir, true);
       if (what == "chanEnd") BuildChannel(dir + SEP + "lb_channel_end.SLDPRT", imgDir, false);
       if (what == "assembly") BuildAssembly(dir, imgDir);
+      if (what == "handleA") { sgn = 1; BuildHandle(dir + SEP + "lb_handle_A.SLDPRT", imgDir, "lb_handle_A"); }
+      if (what == "handleB") { sgn = -1; BuildHandle(dir + SEP + "lb_handle_B.SLDPRT", imgDir, "lb_handle_B"); }
+      if (what == "bar") BuildBar(dir + SEP + "lb_handle_bar.SLDPRT", imgDir);
       if (what == "mock") BuildMock(dir + SEP + "lb_mock_corner.SLDPRT", imgDir);
       if (what == "stl") ExportPrint(dir, stlTag, stlParts.Split(','));
     } catch (Exception ex) { log.AppendLine("!! stopped: " + ex.Message + "\n" + ex.StackTrace); }

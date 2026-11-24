@@ -61,7 +61,7 @@ def section(tris, axis, value):
     return segs
 
 src, out = sys.argv[1], sys.argv[2]
-parts = {'lb_mock_corner': (130, 130, 130), 'lb_corner_block_A': (30, 80, 200), 'lb_bracket_A': (200, 90, 20), 'lb_foot_A': (20, 150, 60)}
+parts = {'lb_mock_corner': (130, 130, 130), 'lb_corner_block_A': (30, 80, 200), 'lb_bracket_A': (200, 90, 20), 'lb_foot_A': (20, 150, 60), 'lb_handle_A': (150, 30, 150)}
 mesh = {k: load(os.path.join(src, k + '.STL')) for k in parts if os.path.exists(os.path.join(src, k + '.STL'))}
 for k, m in mesh.items():
     v = m.reshape(-1, 3)
@@ -72,6 +72,7 @@ names = list(mesh)
 for i in range(len(names)):
     for j in range(i + 1, len(names)):
         if {names[i], names[j]} == {'lb_bracket_A', 'lb_foot_A'}: continue   # alternatives for the same place
+        if {names[i], names[j]} == {'lb_foot_A', 'lb_handle_A'}: continue      # the handle goes on a top corner, with the plain bracket
         vol, box = overlap(mesh[names[i]], mesh[names[j]])
         print('  %-18s vs %-18s %8.1f' % (names[i], names[j], vol) + ('   in x %.1f..%.1f y %.1f..%.1f z %.1f..%.1f' % (box[0][0], box[1][0], box[0][1], box[1][1], box[0][2], box[1][2]) if box else ''))
 

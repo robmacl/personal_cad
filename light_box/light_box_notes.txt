@@ -670,3 +670,40 @@ table). Build in an angle, say 5 deg.
 - The assembly still draws the lamp upright with the wedge under it; it does not tilt the model.
 NOT CHECKED: that 5 deg is the angle wanted in use (it is one number, leanDeg); the frame weight
 estimate; centre of gravity along the length.
+
+----------------------------------------------------------------------------------------------------
+2026-11-23, CREEP IN THE TILTED FOOT (Robert asked) -> feet re-exported as 2026-11-23m (no change of shape)
+"More load on the back foot with the tilt." It is nearly even: per foot the rear bumper carries
+12.0 N and the front 13.5 N. Leaning back moves the weight rearward, but the tail was lengthened
+at the same time (85 behind the housing), so the centre still falls near mid-span (108 behind,
+96 in front).
+What the lean does change is the lever: the tail is a cantilever about 120 long from where the
+housing ends to the rear bumper, and the wedge and the brace both thin toward the tip. The
+generator used to check one section (where the housing ends, 0.42 MPa). It now scans the whole
+tail: WORST 0.63 MPa at z = -113, under the 1.0 MPa line the generator warns at.
+Deflection of the tail at the bumper about 0.04 mm new (E 2000); three times that over years
+is 0.03 deg more lean. Not a concern in plain PETG at room temperature; the feet are at the cool
+end of the lamp.
+The joint that will relax is the M6 through PETG. So AT ASSEMBLY push each foot up until its sole
+is against the end of the housing (the M6 hole has 1.5 of float that way) before tightening:
+then the weight sits housing-on-sole and does not depend on the clamp.
+
+2026-11-23, HANDLE CONCEPT  lb_handle_A / _B + a round bar  (print files tagged 2026-11-23)
+Uses only geometry already measured. Nothing new on the housing.
+- Two CHEEKS, one on the outside of each TOP bracket leg, held by the same two M3 screws that hold
+  the leg to the corner cap (M3 x 20 at the top corners instead of x 12).
+- A lip on each cheek hooks under the bottom of the bracket leg, so the lift goes
+  cheek -> leg -> pad -> M6 insert in the housing. The screws only hold the cheek on:
+  24 N of shear between the two of them at rest, 72 N at 3 g.
+- A stem runs up and 10 back to a boss with a blind socket, 18 deep.
+- BAR: 3/4 in (19.05) round, dowel or tube, CUT 359 mm (14.14 in). It sits in the two sockets and
+  is trapped between the cheeks; no fastener. gripD is one parameter if the stock is different.
+- Bar centre 50 above the top end, 33 of finger room over the corner caps. The lamp hangs 3.7 deg
+  off plumb when carried by it.
+- Cheek 8 thick, 27.6 cm3, prints outside face down, no overhangs, layers in the plane of the
+  load. Both hands built, no errors; overlap 0 against the housing mock, the cap and the bracket.
+- In the assembly (stand-in bar lb_handle_bar).
+NOT CHECKED: what is on the top end of the housing under the bar (the plastic knockout plug: its
+height and where it is; the cord); whether 359 clears anything; the insert pull-out in the cap is
+not in the load path but the M6 inserts in the housing are, and they are the fixture's own
+hanging points. A concept: not printed, not carried.

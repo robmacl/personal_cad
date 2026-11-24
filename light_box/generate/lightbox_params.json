@@ -106,5 +106,17 @@
   "leanDeg": 5.0,
   "footTailT": 6.0,
   "v1LeanDeg": 4.5,
-  "toeNoseR": 5.0
+  "toeNoseR": 5.0,
+  "petgE": 2000.0,
+  "cheekT": 8.0,
+  "handleUp": 50.0,
+  "handleZ": -10.0,
+  "gripD": 19.05,
+  "gripClr": 0.5,
+  "bossWall": 5.0,
+  "bossLen": 14.0,
+  "socketFloor": 4.0,
+  "barEndClr": 1.0,
+  "lipH": 4.0,
+  "lipDeep": 6.0
 }
