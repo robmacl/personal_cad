@@ -707,3 +707,448 @@ NOT CHECKED: what is on the top end of the housing under the bar (the plastic kn
 height and where it is; the cord); whether 359 clears anything; the insert pull-out in the cap is
 not in the load path but the M6 inserts in the housing are, and they are the fixture's own
 hanging points. A concept: not printed, not carried.
+
+2026-11-24, FIRST PRINT OF THE FOOT ON THE LAMP: what it showed, what changed
+(print files tagged 2026-11-24a: lb_foot_A/_B and lb_bracket_A/_B; caps, spacers, handle unchanged)
+
+What Robert found (photos, Nov 24):
+1. A screw through the lens-frame lap at the front corner of the housing END hits the top of the
+   sole. He chewed a pocket in the print to clear it.
+2. On its own the foot swivels about the M6.
+3. The foot does not sit flat on the angled face: the lens frame of the fixture laps back over the
+   side flat (and over the end), about 0.050 in (1.3) proud, and the leg was sitting on it.
+4. The insert shows well off centre in the M6 slot, toward the down-slope end.
+5. The 9 wide slot is too wide for a standard M6 washer; a 1/4 in washer is fine.
+
+What was wrong in the model:
+- The mock of the housing had no lens-frame lap and no corner screw. The leg stood 0.4 off the side
+  flat, the lap is 1.3: 0.9 of interference at the front of the leg. That pushes the foot outward,
+  which on a sloping face means up the slope by about 1.0: the insert then shows 1.0 DOWN-slope of
+  the slot centre. That accounts for at least part of item 4.
+- The sole stood 3.5 below the housing end to clear 2.8 screw heads, but the corner screw sits on
+  the lap: 1.3 + 2.8 = 4.1. So the lamp stood on that one screw head, 0.6 low, and pivoted on it.
+- The Nov 23 note said to push the sole up against the end of the housing before tightening. With a
+  3.5 gap and 1.5 of float that could never be done. It was wrong; the lands below replace it.
+- Why the foot swivels: the M6 is on the angled face, so its axis lies in the plane of the housing
+  end, and nothing on the foot touched that end. Only clamp friction resisted it.
+
+Changes (all in lightbox_params.json: stripT, stripW, stripClr, stripBack, endRelClr, footTab*,
+landA*, landB*, cornerScrew*):
+- LENS FRAME RELIEF, SIDE (brackets and feet): the inside of the leg is stepped out to x = 1.8 from
+  z = -15 forward (lap taken as 12 wide + 3). 0.5 clear of the lap. Leg is 9.6 thick there.
+- END RELIEF (feet): from z = -15 forward the top of the sole is dropped to 5.1 below the housing
+  end, the full width under the housing. Clears the lap and the corner screw head (4.1) by 1.0
+  wherever that screw is in the lap; no pocket to line up.
+- TAB (feet): the sole is carried 33 further in under the housing end, toward the centre line of
+  the lamp, from z = -50 to z = -19 (to x = -64). This is Robert's suggestion and it is the one
+  that works, because it reaches across the M6 axis.
+- LANDS (feet): two raised pads, 3.5 high, that touch the END of the housing itself.
+  Land A: x -17..-3, z -30..-18 (beside the side flat, behind the lap): 15 mm one side of the axis.
+  Land B: x -60..-46, z -43..-27 (on the tab): 27 mm the other side.
+  Whichever way the foot tries to swivel, one land is driven into the end of the housing. The lands
+  also carry the weight straight down (housing end -> land -> sole -> table) and set the height of
+  the foot: the insert comes to the middle of the slot along the length if insFromEnd 20.7 is right.
+  ASSEMBLY: push the foot up until both lands touch the end of the housing, then tighten the M6.
+- A lip in front of / around the housing corner was considered and not done: it bears on a rounded
+  sheet-metal corner a few mm from the lap, stops one direction only, and the lands do the job with
+  15 and 27 mm of lever on a flat face.
+- Slot NOT widened and NOT moved (Robert: do not make it wider or move it further off the insert).
+  WASHER: 1/4 in flat or fender washer (>= 16 OD). A standard M6 washer (12 OD) is too small.
+- Mock now has the lap (side and end) and the corner screw head, so the clash check sees them.
+  Overlap foot vs mock: 0.
+
+Estimated from the photos, NOT measured:
+- lap width 12 on the end (reads 10.5 to 12 in the photo); assumed the same on the side flat.
+  The reliefs allow 15. Worth one caliper reading on each face.
+- corner screw about 6 from the front, 5.5 from the side, head about 8.5 dia. The end relief does
+  not depend on it.
+- the end of the housing is taken as flat and bare under the lands (it looks so in the photo: the
+  long pressed rib starts about 44 in from the side, the round hole is about 75 in).
+NOT CHECKED: whether the insert centres along the slope once the leg is off the lap. If it still
+sits more than about 1.5 off, the number goes into insUpSlope (20.8) and the slot follows the
+insert; float along the slope is 4.0 each way meanwhile.
+
+2026-11-24, SADDLE HANDLE on the back of the driver channel   lb_saddle_handle
+(print file lb_saddle_handle_2026-11-24.STL; generator -What saddle; stand-in -What chanMock)
+Replaces the two-cheek handle concept of Nov 23 (lb_handle_A/_B + bar), which is now dead.
+
+Robert's brief: one printed piece that sits on the back of the electronics channel like a saddle,
+on the four M6 inserts there (two each side), at the balance point for carrying face down. One-
+handed grip, hand through across the channel. Hand opening about 4.5 x 2 in. Grip full round
+(support filament is available). The saddle bridges over and covers the hanger plate and its
+hardware so knuckles do not meet it.
+
+His measurements (in -> mm)                              parameter
+  lid width                          3.313   84.15       sdLidW
+  channel width below the lid        3.157   80.19       sdChanW (reference only)
+  step, lid edge to channel wall     0.064 / 0.070  1.70 sdLidStep
+  insert flange face below lid edge  0.032    0.81       sdInsRecess
+  insert flange diameter             0.486   12.3        insFlangeD (same as the corner inserts)
+  inserts, inner edge to inner edge  1.845 -> 59.2 centres   sdInsSpan
+  lid edge to the hanger plate etc.  0.408   10.36       sdJunkIn
+  tallest of the hardware            0.170    4.32       sdJunkH
+The widths do not quite close (lid - 2 x step = 80.75, not 80.19); the handle uses the lid width
+and the 0.032 directly, which are the two that matter. The Nov 23 sketch reading "driver channel
+width 3.92" is some other dimension; nothing in the handle uses it.
+
+ESTIMATED FROM HIS PHOTO, NOT MEASURED (scaled from the flange diameter and the insert spacing):
+  insert centre below the top of the lid   22     sdInsDown   <- THE ONE THAT MATTERS. Could be 20 to 25.
+  height of the lid skirt                  10.5   sdSkirtH    (only decides whether a washer clears it)
+  channel wall, lid top to the wing        37     sdWallDown  (the Nov 23 sketch says 44.1; legs stop at 33)
+
+THE PART (own frame: x along the channel, 0 midway between the inserts; y across; z up from the lid)
+- Saddle 184 long x 96 wide. Two lands 8.9 wide sit on the bare strip of lid along each edge.
+  Between them a recess 66.4 wide x 6.0 high runs the whole length, open at both ends: 1.7 over the
+  hardware, 1.5 each side. Open ends mean its length along the channel need not be known, and air
+  still gets to the slots in the lid.
+- Bail of 25 round bar on top: two legs, a quarter-torus elbow at each corner (18 centreline), and
+  the grip. Opening 114.3 x 50.8 exactly as asked, top corners R 5.5, 103 of straight grip.
+  Top of the grip is 88 above the lid. R 8 fillet round the foot of each bail leg.
+- A leg 5 thick down each side to the inserts, 92 long at the bottom, running up at 50 deg to a
+  5 deep lip that goes on to the ends. Four M6 slots 7 wide x 11 tall (2 of float up and down for
+  the estimated height).
+- 303.6 cm3 solid. 121 tall as printed.
+
+THE LEGS DO NOT SNAP ON, and why. Robert suggested the legs bear on the insert flanges and snap
+over the lid. The flange faces are 0.8 inside the lid edge each side, so legs that reach them have
+to spring 0.7 to pass the lid, and the only place for that bend is the 14 mm of leg above them:
+about 2.6 % strain. Printed legs-down (below), that bend is ACROSS THE LAYERS, which is where a
+print cracks. So the legs are flat, 0.8 clear of the lid each side, and drop straight on; the 1.6
+gap left at each insert is filled by an ordinary M6 WASHER (1.6 thick, 12 OD) between the flange
+and the leg. It still bears on the inserts and not on the sheet metal, as he wanted. If a washer
+leaves daylight, each 0.1 mm the screw has to pull the leg in costs 0.15 % strain: a second thin
+washer or a shim is better than pulling in more than about 0.2.
+
+PRINT: as modelled, legs on the bed. PETG (the channel holds the driver and runs warm; not PLA).
+- This way up the grip bar and the roof, which are the parts in bending, have their strands along
+  the stress. The bail legs and saddle legs are across the layers but in plain tension, 0.06 MPa.
+- Supports needed under the roof (184 x 86, 33 up) and under the grip and elbows (51 up from the
+  roof). Roughly 80 cm3 of support. Brim on the leg bottoms: they are two strips 92 x 5.
+- Strength profile as discussed (6 walls, 25 %, bottom layers raised to 5).
+
+LOADS (lamp 51 N + frame 10 N; estimates by hand, logged by the generator)
+- Carried face down: grip bar 1.9 MPa, roof between the legs 1.4 MPa, both along the strands.
+- Lifted by the handle while the lamp is standing, so the pull is along the bar: 1.2 MPa at the
+  foot of a bail leg ACROSS THE LAYERS, 3.7 at 3 g (shell only). This is the worst case for the
+  print and the reason for the R 8 fillet. Acceptable; not something to yank.
+- Screws: 15 N each at rest if friction is lost, 0.5 MPa on the slot end, 5.5 of leg below the slot.
+
+HARDWARE: 4 x M6 x 16 button head; 4 x M6 washer as spacers on the inserts; 4 x 1/4 in washer under
+the heads (the slot is 11 tall, an M6 washer barely covers it). M6 x 16 puts about 7.8 into the
+insert past its flange, 3 more than the M6 x 12 at the feet: try a bare screw in an insert first
+to see that it runs in that far. Once sdInsDown is measured the float can come down to 1 and an
+M6 washer under the head will do.
+ASSEMBLY: stick a washer on each insert with a dab of grease, lower the saddle on until the lands
+sit on the lid, screws in through the slots, tighten.
+
+SIDE EFFECT: the handle stands 88 behind the driver channel. With the lamp on its feet and leaning
+back 5 deg it reaches about 114 behind the back of the housing at the base, the feet 85. Against a
+wall the handle touches first, and sets the lamp about 30 further out than the feet would.
+
+CHECKED
+- Built by script, one body, no feature errors, no generator warnings.
+- Overlap against the stand-in channel (lid, wall, hardware block, four flanges each with a 1.6
+  washer): 0, on a 0.8 mm grid (the usual 0.4 takes half an hour on a pair this size).
+  Sections in check/sections_saddle.png.
+- Overhangs in the print orientation are the ones listed under PRINT and nothing else: roof and
+  land undersides, the underside of the lip (5 wide, 28 up), the underside of the grip and elbows.
+NOT CHECKED
+- sdInsDown. The slots are placed from a photo. MEASURE lid top to insert centre before printing;
+  it is one number in the JSON and a rebuild.
+- That the inserts on the far side are opposite the near ones and at the same height.
+- That the strip of lid along each edge is bare and flat for the whole 184 (it looks so in the
+  photo), and that nothing on the channel wall stands proud within 61 of the centre at insert height.
+- How deep an M6 runs into these inserts.
+- Not sliced, not printed, not carried. The stress figures are hand estimates.
+- The stand-in channel is not in the assembly; the assembly still shows the old handle bar.
+
+2026-11-25, SADDLE HANDLE: insert height measured   print file lb_saddle_handle_2026-11-25.STL
+(supersedes lb_saddle_handle_2026-11-24.STL, which had the slots placed from a photo)
+
+Robert: top of the lid down to the top edge of an insert flange is "about 0.594" (15.09).
+Flange is 0.486 dia, so the insert CENTRE is 15.09 + 6.17 = 21.26 below the lid top.
+  sdInsDown    22.0 -> 21.3   (the photo estimate was 0.7 out; inside the old +/-2 float)
+  sdSlotFloat   2.0 -> 1.0    slots now 7 wide x 9 tall, 6.5 of leg below the slot
+Leg bottom follows the insert: z -32.3 (was -33.0), part 120.1 tall as printed, 302.9 cm3.
+Nothing else changed: lands, recess, bail, leg clearance, spacer washers all as Nov 24.
+Spacer washer (12 OD) top edge is 15.3 below the lid top; skirt bottom is put at 10.5 (still a
+photo estimate), so 4.8 to spare there even at the top of the float. The skirt height no longer
+needs measuring.
+Washer under the head: with the slot 9 tall a standard M6 washer (12 OD) now covers it, by 1.5
+each end centred and 0.5 at the limit of the float. A 1/4 in washer is still the better one.
+His third photo (caliper against a taped block) was showing that the insert head is recessed back
+from the lid edge: that is the 0.032 already in sdInsRecess. No new number.
+
+CHECKED: one body, no feature errors, no generator warnings; overlap 0.0 against the rebuilt
+stand-in (0.8 grid); sections in check/sections_saddle.png; overhangs as before (roof underside
+and lands at 32 to 39 up, grip and elbows at 94 to 98), all wanting support.
+NOT CHECKED: the measurement is one reading on one insert ("about"); the far-side inserts are
+assumed opposite and at the same height (1 of float is what covers that); lid edge strips bare
+for 184; M6 x 16 depth into these inserts; nothing sliced, printed or carried.
+
+----------------------------------------------------------------------------------------------------
+2026-11-25, FRAME BUILD PROCEDURE (Claude's proposal; replaces the ASSEMBLY ORDER of Nov 23)
+Robert's question: which surfaces get glue, and is a peg glued on two sides enough?
+WHAT IS GLUED: each cap tongue and each spacer to the channel's REAR leg and WEB only. Nothing on
+the face toward the sheet, nothing on the front leg, no epoxy on the sheet anywhere.
+Per tongue: rear face 30 x 10.6 = 320 mm2, web face 30 x 9.75 = 290 mm2, 610 in all.
+Epoxy on abraded PETG put at 2 MPa shear (GUESS, could be 1 to 4): 1200 N to pull one tongue out,
+600 at the bottom of the guess. The frame weighs 10 N. The tongue itself: 103 mm2 section, about
+2600 N in tension across the layers, so in a straight pull the bond goes before the peg. That is
+not the load that matters: a knock or a drop on a corner bends the cap against the channel, the
+tongue bears in the slot whether glued or not, and it breaks at its root at 4 to 5 N.m.
+The glue only has to stop the tongue sliding back out.
+ORDER
+0. Dry run of everything with the sheet in, and offer it up to the lamp with brackets and feet.
+   Deburr inside the cut ends. File any nick on the sheet corners (cap slot is 3.15).
+1. Abrade (80 grit) tongue and spacer faces that go to the rear leg and web, and the inside of the
+   channel there; IPA. Peel the sheet's masking back 20 mm from the edges, leave the middle on.
+2. Spacers into the channels, sheet not there. Channel lying on its back so they seat on the rear leg.
+3. Frame without the sheet: glue the two bottom caps to the bottom end channel and both sides, glue
+   the two top caps to the top end channel, and push the top end onto the sides DRY. Lay it back
+   down on a flat surface (cap backs are flush with the channel backs, so this seats every tongue
+   on the rear leg), tape or strap round, diagonals equal within 1 mm. Glue goes mostly INSIDE the
+   channel so the tongue pushes it inward (hidden) rather than the channel end scraping it out.
+4. Cured, top still on: drill 2.5 through the rear leg into each top side tongue, 15 from the channel
+   end, 8 deep from the back surface WITH A STOP (the sheet side is 9.75 + 1.6 away). Pull the top
+   off, open the two aluminium holes to 3.4.
+5. Sheet in, top end on, two M3 x 8 thread-forming screws. No wet glue with the sheet in the frame,
+   and the sheet can be changed later.
+6. Silicone only if it rattles, and then from the BACK after assembly: a dab between the back of
+   the sheet and the inner face of a spacer. Nothing on the front leg.
+NOT CHECKED: the 2 MPa figure (glue a spare spacer into an offcut and break it out); that a 2.5 high
+screw head on the back of the side channel 15 from the top end clears the bracket and the housing.
+
+2026-11-25, SADDLE HANDLE: slots widened   print file lb_saddle_handle_2026-11-25a.STL
+(supersedes _2026-11-25; found on a last look before printing, not from a measurement)
+The slots floated 1.0 up and down but were 7.0 wide for a 6.0 screw: only 0.5 each way ALONG the
+channel. The handle slides along as a whole, so what that has to absorb is (a) the error in the
+59.2 insert spacing, measured on one side only as 1.845 edge to edge + 0.486, (b) the far-side
+pair's own spacing, never measured, and (c) any stagger between the two sides, never measured.
+Half a millimetre for all three on a sheet-metal channel is the kind of fit cad/CLAUDE.md calls a
+design fault.  sdSlotW 7.0 -> 8.0: slots 8 wide x 10 tall, 1.0 of float every way, 6.0 of leg
+below the slot. Screw loads are 15 N each, so the wider slot costs nothing.
+WASHER under the head is now a 1/4 in flat washer (or M6 fender), not a standard M6: a 12 OD
+washer covers an 8 x 10 slot by 2 at the sides but by nothing at the end of the float.
+CHECKED: one body, no feature errors, no warnings; overlap 0.0 against the stand-in.
+NOT CHECKED: as Nov 25 above. Spacer washer thickness as bought (1.6 nominal; the gap is 1.61 by
+the measurements) is to be tried at fitting: the leg should be neither pulled in nor pushed out.
+Temperature of the lid under the saddle with the lamp running has not been measured.
+
+2026-11-25, ASSEMBLY: saddle handle in, two-cheek handle out   lb_light_box.SLDASM
+- lb_handle_A, lb_handle_B and lb_handle_bar removed from the assembly (3 components). Their part
+  files and the -What handleA|handleB|bar builds are still there, unused. The top corners are plain
+  brackets again, on the ordinary M3 screws.
+- lb_saddle_handle placed on the back of the driver channel: its x along the lamp, its origin on
+  top of the lid. Position along the length is sdHandleY = 0, the MIDDLE OF THE LAMP. That is
+  ASSUMED: nobody has measured where the four inserts are along the length.
+- Housing stand-in (lb_housing) corrected to match: driver channel body 80.2 wide (sdChanW) with
+  the 84.2 lid and its skirt, and the hanger hardware as one block 110 long. It was 99.6 wide from
+  the Nov 23 sketch ("driver channel width 3.92"), which the saddle would have cut into. What the
+  3.92 is has not been settled (base flanges of the channel is the likely answer); it is not drawn.
+  lightChanW is now unused.
+- Views in check/: assem_iso, assem_front, assem_back, assem_side, assem_bottom.
+NOT CHECKED: wing-to-lid-top height in the stand-in is 41.9 (92 overall less 50.1 wing); the photo
+said about 37 and the Nov 23 sketch 44.1. The saddle legs stop 32.3 below the lid top, so they
+clear the wing on any of the three.
+
+2026-11-25, CORRECTION: the "driver channel width 3.92" of the Nov 23 sketch is 3.32 (84.3)
+Robert: his handwriting, a 3 read as a 9. So it is the LID width, and agrees with the 3.313 he
+measured for the handle. Nothing is left unexplained there, and there are no base flanges to draw.
+It also closes the width sum that would not close on Nov 23:
+  2 x (1.304 + 3.550) + 3.32 = 13.03 in   against 13.00 measured (was 13.63 with 3.92)
+so the remark there that "either the 3.550 or the 3.92 overlaps something" is void: nothing overlaps.
+lightChanW 99.6 -> 84.3 for the record. It is not used by any part or by the stand-in, which
+takes sdLidW (84.15) and sdChanW (80.19). No part changed and nothing was rebuilt.
+
+2026-11-25, SADDLE HANDLE: hand opening 2.00 -> 1.75 in   print file lb_saddle_handle_2026-11-25b.STL
+(supersedes _2026-11-25a)
+Robert: the 2 in was an eyeball with margin; 1.5 would be usable but snug for his hand. Settled on
+1.75 (Claude's suggestion: only the fingers, about 0.8 to 0.9 in, go under the bar; 1.75 leaves
+double that and still lets a hand in at an angle).
+  sdOpenH 50.8 -> 44.45. Opening 114.3 x 44.5, still 103 of straight grip.
+  Top of the grip 81.5 above the lid (was 87.8); 113.8 tall as printed; 296.4 cm3.
+  Lifted with the lamp standing: bail leg root 1.1 MPa across the layers, 3.4 at 3 g (was 1.2 / 3.7).
+Elbow radius (sdBendR 18 on the centre line: R5.5 inside, R30.5 outside) left alone. A bigger
+bend would take straight grip away (there is 103 for a 94 hand) and read as bent tube against
+the square saddle, brackets and feet.
+CHECKED: one body, no feature errors, no warnings; overlap 0.0 against the stand-in; overhangs
+unchanged in kind. Assembly views in check/ redone with the shorter handle.
+
+2026-11-25, SPACER GAP MEASURED: 0.3 mm
+Robert: with the diffuser in place, the spacer block has 0.3 of gap in the slot (dry). Predicted
+0.25 to 0.45 (12.9 slot - 9.75 spacer - 2.90 sheet). So the spacer and tongue section stays as it is.
+What it means for the glue-up: that 0.3 is shared by the glue line on the rear leg and the sheet's
+freedom. Keep the rear-leg glue line thin (a skim, spacer pressed down hard, channel on its back)
+and let the surplus go to the web side, where the spacer is 0.5 short of the slot depth.
+Go / no-go while the glue is wet: a 3.0 mm drill shank must pass between spacer and front leg.
+With 0.2 to 0.3 of play the sheet should barely rattle; silicone only if it does.
+
+2026-11-25, M3 HEAT-SET INSERT HOLES IN THE CORNER CAPS ARE TOO SMALL (Robert, first caps fitted)
+Robert: even the narrow end of the insert does not enter the hole. They were made to go in; his
+photo shows a ring of displaced plastic standing proud round each insert.
+Cause (Claude's error, Nov 23): McMaster gives a 0.185 in (4.70, #13) hole for 94180A333. The
+note then said to finish the 4.3 printed hole "to about 4.5 ... nearer the small end of the taper",
+which shaved a number that was already the hole size. On top of that the hole mouth is on the bed
+face of the cap, where the first layers close it up further.
+FOR THE CAPS ALREADY PRINTED: drill #13 (4.7; 3/16 = 4.76 will also do) to 7.5 to 8 deep with the
+stop bushing before setting the insert. The narrow end should then drop in a millimetre or two by
+hand and the insert stand up on its own. Pare the raised ring flush on the ones already set: the
+bracket or foot leg clamps on that face.
+insHoleFinishD 4.5 -> 4.7 (log and wall check only; pilotD stays 4.3 as printed, so the drill takes
+0.2 a side). NOT YET DONE: a chamfer on the hole mouth to take the first-layer squash and give the
+melt somewhere to go; caps not rebuilt, since the printed ones are in use.
+NOT CHECKED: the insert itself has still not been measured across the narrow end and the knurls.
+
+2026-11-25, CORNER CAPS: INSERT HOLES NOW TAPERED, PRINT TO SIZE
+print files lb_corner_block_A / _B _2026-11-25.STL (supersede the 2026-11-23k files for any reprint)
+Robert: he does not finish-drill holes for heat-set inserts, and he will print these again (he
+means to upgrade his own light to this design). The hole was a plain 4.3 cylinder.
+READING OF THE McMASTER FIGURES (corrects the entry above, which still read 4.70 as a straight
+hole): the short M3 insert (3.8 long) lists a 0.199 in hole and the long one (6.4) lists 0.185.
+5.05 - 2 x (6.4 - 3.8) x tan 4 deg = 4.69. So the two share a wide end and an 8 deg taper, and the
+listed "hole" is the diameter at the NARROW end. The hole for the long insert is therefore
+4.70 at 6.4 deep opening to 5.60 at the mouth. The printed 4.3 cylinder was 1.3 small at the mouth,
+which is the ring of plastic in Robert's photo.
+THE HOLE NOW (per hole, a revolved cut, axis along the build direction):
+  mouth chamfer 0.4 x 45 deg (6.34 at the face; the mouth is on the bed, so this takes the squash)
+  taper 8 deg included: 5.60 at the mouth to 4.70 at 6.4 deep     insHoleBotD 4.7, insTaperDeg 8, insLen 6.4
+  straight 4.70 pocket from 6.4 to 8.0 deep for the melt           pilotDepth 8.0
+No allowance added for printed holes coming out small (0.1 to 0.2): that only adds bite, and the
+insert then stands a millimetre or so prouder before it is heated in. pilotD and insHoleFinishD
+are no longer used by the cap.
+Plastic front and back of the hole at the mouth: 2.91 (was 3.46 at a 4.5 hole).
+CHECKED: both hands one body, no feature errors, no warnings; diameters read back off the exported
+meshes: 6.34 at the face, 5.54 at 0.4 deep, 4.70 at 6.4 deep, both holes, both hands.
+NOT CHECKED: the insert itself has not been measured. If the narrow end is not about 4.7 to 4.9 and
+the knurled end about 5.6 to 5.9, the reading above is wrong and insHoleBotD is the number to move.
+Nothing printed with the new hole. For the caps already printed, a #13 drill only helps the narrow
+end start; it does not make the hole right.
+
+2026-11-25, FRAME GLUE-UP: Robert's decision, replaces the proposal earlier today
+DECIDED: all four corners glued, NO closing screws. Assembled round the sheet, which is the jig:
+caps slipped on to the sheet corners, then each channel pushed on SIDEWAYS over the sheet edge and
+the two tongues (this is how he dry-fitted it, and it works because tongue + sheet is 12.65 in a
+12.9 slot). So nothing slides 500 mm down a slot, and the sheet is not replaceable afterwards.
+Robert's dry fit: the sheet is snug in the channels, with perhaps a little gap between channel
+and corner piece. NOT YET SETTLED what is touching what (sheet edge on both webs? joints unable to
+close?). The design gave the sheet 1.0 per end and 0.75 per side.
+THE ONE THING TO KEEP: room for the sheet to grow. Against the frame it gains about 0.03 mm per
+kelvin on the length; warm lamp plus a warmer room than the glue-up is of order 0.6 on the length
+and 0.3 on the width. Held edges: the sheet starts to ripple at roughly 0.2 of that (plate
+buckling about 0.9 MPa, 290 microstrain), a few mm of waviness, not breakage. So when the glue
+sets the sheet must still shuffle edgewise, about 0.5 or more each way. The frame size should come
+from the channel ends butting the cap shoulders, not from the sheet bottoming in the webs.
+ORDER
+1. Spacers glued into the channels beforehand (skim on the rear leg, surplus to the web, 3.0 drill
+   shank go/no-go).
+2. Sand and IPA the tongue backs and outer faces and the channel there. Masking peeled back 20 mm.
+3. Caps on to the sheet corners dry. No glue on the sheet or in the cap's sheet slot.
+4. Epoxy INSIDE each channel end, first 25 mm: on the rear leg, and on the web only in the rear
+   9 mm of its width (the front 3 mm is where the sheet edge comes). Nothing on the front leg.
+5. Channels on sideways; push each channel END home against its cap shoulders.
+6. Flat on its back on poly sheet, caps pressed down so their backs are flush with the channel
+   backs (seats the tongues on the rear leg); tape or strap round. Check the sheet still shuffles.
+   Wipe squeeze-out at the joint lines with IPA. Silicone afterwards only if it rattles.
+
+2026-11-25, CORNER CAPS: SHEET CORNER RELIEF
+print files lb_corner_block_A / _B _2026-11-25a.STL (supersede _2026-11-25; tapered insert holes kept)
+Robert, dry fit: the caps do not seat all the way on to the sheet corner; it binds at the very tip.
+Cause: the inside corner of the cap's web, in the sheet slot, carried an R1.0 fillet (rimInR). A
+sharp sheet corner rides up on that fillet when the cap is still 0.29 off both edges (R x (1 - 1/root 2)),
+more with the usual bulge of a printed inside corner. So in the dry fit the edges had some air but
+all four tips were jammed: the sheet had no room to grow whatever the edge gaps were. This is also
+why the corners "drew up snug" short of the design position.
+NOW: the fillet is gone and a round pocket, R1.0 (sheetReliefR), centred on the inside corner of
+the web, is cut over the height of the sheet slot only (z 25.25 to 28.4). The cap can sit hard on
+both sheet edges with the tip still 1.0 from anything; at the design position the tip has 2.25.
+About 2.3 of web left on the diagonal behind the pocket (bumper corner), solid above and below it.
+CHECKED: both hands one body, no feature errors, no warnings; pocket read back off the meshes at
+the right corner on both hands, reaching 1.0 into each web leg, slot height only.
+FOR THE CAPS ALREADY PRINTED: file a flat of 1 to 1.5 mm across each sheet corner at 45 deg. It is
+hidden: the sheet corner goes 10 mm under the lip. Then the caps come up to the edges, and the
+channel ends butting the cap shoulders set the 1.0 / 0.75 allowance as designed; the spacer in the
+joint is the fallback if the sheet turns out oversize.
+NOT CHECKED: nothing printed with the relief; clash check against the mock corner not re-run (the
+change only removes material).
+
+2026-11-25, CORNER CAPS: SHEET SLOT WIDENED 3.15 -> 3.50
+print files lb_corner_block_A / _B _2026-11-25b.STL (supersede _2026-11-25a; tapered insert holes
+and the sheet corner relief kept)
+Robert, dry fit: the slot is too tight on the sheet's thickness at the root of the tongue on some
+caps, and has only 0.1 of clearance elsewhere. Drawn at 3.15 for a 2.90 sheet (0.25); both slot
+faces are vertical walls in the print, which come out a little fat, so 0.1 real is about right.
+lipClr 0.10 -> 0.45: the slot opens on the LIP side only. Slot 3.50 (0.60 drawn, about 0.45
+expected as printed), lip 3.62 thick (was 3.97).
+The seat is NOT moved, on purpose: the seat is the top of the tongues, and tongue and spacer
+thickness (9.75) is the fit in the channel that Robert measured at 0.3 with the sheet in. That
+stays exactly as it was. The front face of the cap does not move either.
+The sheet corner is held front to back by the channels and spacers, not by the cap, so the extra
+air at the cap costs nothing; a dab of silicone there if it ever rattles.
+CHECKED: both hands one body, no feature errors, no warnings.
+NOT CHECKED: nothing printed with it; why the root of the tongue is tighter than the rest (seam,
+support or a corner bulge) was not established, only given more room.
+
+2026-11-25, GLUE-UP: SPACERS IN THE JOINTS (Robert's decision)
+State of the dry fit: sheet corners rounded R10 by Robert (hidden under the 10 mm lip); joints now
+close; but the printed caps PINCH the sheet on its thickness (slot drawn 3.15, about 0.1 real), so
+the sheet will not shuffle and the edge room cannot be proved by feel. No filament in this colour
+for a reprint; filing inside the cap slot or thinning the sheet ruled out by him.
+So: a temporary 0.5 mm spacer in each of the eight cap-to-channel joints during the glue-up. The
+frame comes out 1 mm longer and 1 mm wider than the closed-joint size, which guarantees at least
+that much edge room whatever the closed size really gives. The pinch stays; it is friction, well
+under what the sheet pushes with when it grows, so it is not the thermal problem.
+Limits: not more than 0.5 per joint. Each cap moves 0.5 outward along the length, out of the 1.5 of
+float the M6 holes in the brackets and feet have that way.
+Each joint must be closed ON its spacer (spacer gripped) before the glue is left, because the
+pinched sheet, not the strap, will otherwise decide where a cap sits.
+
+2026-11-25, GLUE-UP: LONGER CHANNELS INSTEAD OF SPACERS (Robert's proposal; supersedes the spacers)
+Robert has spare channel and would rather cut the channels a couple of mm longer than leave
+spacers in the joints: the sheet has plenty of overlap, and too much slop only means a rattle,
+which RTV fixes. Agreed. Joints then close on the shoulders, no gap lines.
+NEW CUT LENGTHS (Claude)
+  end channels  294.0 -> 296.0 (11.65 in)   +2.0: nothing limits it. Each cap moves 1.0 outward;
+                the bracket pad slides along the bevel (4.0 of float each way) and the frame ends
+                up about 0.6 further forward (1.0 x tan 30 deg). Gap to the lens 25.4 -> 26.0.
+  side channels 523.9 -> 525.4 (20.69 in)   +1.5, NOT more than 2.
+WHY THE LENGTH IS THE ONE WITH A LIMIT: the feet have lands that are pushed up against the END of
+the housing, and the feet are screwed to the bottom caps. So the bottom of the frame is located by
+the housing end, and ALL of any extra length appears at the top, where the bracket M6 holes have
+1.5 of float along the lamp (plus about 0.4 at each M3). Some of that float may already be used:
+it was put there for a housing length known only to +/-1.
+(CORRECTION to the spacer entry above: it said each cap moves 0.5 out of 1.5 of float. With the
+feet on their lands it is the full added length at the top brackets, not half.)
+TRIAL BEFORE CUTTING: dry-fit the frame on the lamp with 0.75 spacers in both joints of each side
+channel (the same +1.5) and see that the feet seat on the housing end and the top bracket M6
+screws still start. If they do not, ease the top bracket holes or cut +1.0.
+Sheet after the change, as designed: 1.75 per end and 1.75 per side of edge room, 9.4 still in the
+slot all round; the R10 corners stay under the cap lips.
+MODEL NOT CHANGED: edgeL / edgeW still 1.0 / 0.75, because the printed brackets, feet and caps of
+this build were made to those. For the next build (Robert's own lamp) set both to 1.75 and
+regenerate caps, brackets, feet and channels together, so nothing relies on bracket float.
+
+2026-11-25, CHANNEL LENGTHS AS CUT, AND WHERE THE PROJECT STANDS (put to bed for a week or so)
+Robert checked the four channels with a rule: three are remarkably close to nominal, one is about
+1 mm short. His judgment: +/-1 mm is a fairly tight tolerance for a chop saw, and the design
+should allow for more than that.
+What that means here: the frame size comes from the LONGER channel of each pair; the short one
+just shows a gap at one joint, which the 30 mm tongue and the epoxy cover. So a short channel is
+harmless as long as the allowance round the sheet does not depend on it. With the old 1.0 / 0.75
+allowance a 1 mm error was the whole allowance; with the 1.75 planned it is not.
+When recutting: cut each PAIR clamped together so the two match each other, which matters more
+than hitting the number.
+STATE WHEN PARKED
+- Frame: not glued. Sheet corners rounded R10. Printed caps (2026-11-23k) pinch the sheet on its
+  thickness and have the old straight insert holes; they are being used as they are.
+- Decided: recut channels longer (ends 296.0, sides 525.4, trial with 0.75 spacers on the lamp
+  first), glue all four corners, sheet as the squareness jig, joints closed on the shoulders.
+- Saddle handle: lb_saddle_handle_2026-11-25b.STL is the file to print (4.5 x 1.75 in opening,
+  8 x 10 slots). Lamp checks done by Robert: far-side inserts opposite, 10 mm clear each side of the
+  hanger plate, M6 x 15 runs clean through an insert. Not known whether it has been printed.
+- Corner caps for any reprint: lb_corner_block_A/_B_2026-11-25b.STL (tapered insert holes, sheet
+  corner relief, 3.50 slot). Never printed.
+- Still unmeasured: the heat-set insert itself (narrow end, knurled end); where the driver-channel
+  inserts are along the lamp (assembly shows the handle at mid-length).
+- For the next build (Robert's own lamp): edgeL / edgeW to 1.75 and regenerate caps, brackets,
+  feet and channels together.

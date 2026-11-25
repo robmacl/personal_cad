@@ -16,7 +16,7 @@ def load(path):
     return np.frombuffer(data, dtype=dt, count=n, offset=84)['v'].astype(float)
 
 # part -> (build axis, +1 if the print grows toward + on that axis)
-ORIENT = {'lb_corner_block_A': (0, -1), 'lb_bracket_A': (1, +1), 'lb_foot_A': (1, -1), 'lb_spacer': (2, +1), 'lb_handle_A': (0, -1)}
+ORIENT = {'lb_corner_block_A': (0, -1), 'lb_bracket_A': (1, +1), 'lb_foot_A': (1, -1), 'lb_spacer': (2, +1), 'lb_handle_A': (0, -1), 'lb_saddle_handle': (2, +1)}
 
 def overhang(t, axis, sign):
     nrm = np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]); area = np.linalg.norm(nrm, axis=1) / 2

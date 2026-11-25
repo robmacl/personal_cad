@@ -1,6 +1,6 @@
 # Generates the light box v2 printed parts in a running SolidWorks session.
 #
-#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|footA|footB|spacer|handleA|handleB|bar|mock|housing|diffuser|chanSide|chanEnd|assembly] [-ImgDir <dir>]
+#   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 [-What gauge|blockA|blockB|bracketA|bracketB|footA|footB|spacer|handleA|handleB|bar|saddle|chanMock|mock|housing|diffuser|chanSide|chanEnd|assembly] [-ImgDir <dir>]
 #   powershell -ExecutionPolicy Bypass -File lightbox_generate.ps1 -What stl -StlTag <tag> [-StlParts a,b,...]
 #
 # The second form writes fine STL print files to ../stl/lb_<part>_<tag>.STL.
@@ -173,6 +173,7 @@ public static class Gen {
     return true;
   }
   static double finTransp = 0;
+  static bool saddleViews = false;
   static void Finish(string path, string tag, double r, double g, double b, string imgDir, string view, int viewId) {
     doc.ClearSelection2(true);
     EquationMgr eq = (EquationMgr)doc.GetEquationMgr();
@@ -211,6 +212,25 @@ public static class Gen {
       sw.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swSTLDontTranslateToPositive, true);
       doc.Extension.SaveAs(imgDir + "\\" + tag + ".STL", 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent | (int)swSaveAsOptions_e.swSaveAsOptions_Copy, null, ref e, ref w);
       sw.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swSTLDontTranslateToPositive, old);
+      if (footMode) {
+        // the side of the foot that meets the lamp: square on, and from an angle
+        doc.ShowNamedView2("*Bottom", 6); doc.ViewZoomtofit2(); doc.GraphicsRedraw2();
+        doc.Extension.SaveAs(imgDir + "\\" + tag + "_lampside.jpg", 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent | (int)swSaveAsOptions_e.swSaveAsOptions_Copy, null, ref e, ref w);
+        ((ModelView)doc.ActiveView).RotateAboutCenter(-0.85, 0.55); doc.ViewZoomtofit2(); doc.GraphicsRedraw2();
+        doc.Extension.SaveAs(imgDir + "\\" + tag + "_lampside_oblique.jpg", 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent | (int)swSaveAsOptions_e.swSaveAsOptions_Copy, null, ref e, ref w);
+      }
+      if (saddleViews) {
+        string[] nm = { "_top", "_under", "_end", "_side" }; string[] vw = { "*Front", "*Back", "*Right", "*Top" }; int[] id = { 1, 2, 4, 5 };
+        for (int i = 0; i < nm.Length; i++) {
+          doc.ShowNamedView2(vw[i], id[i]); doc.ViewZoomtofit2(); doc.GraphicsRedraw2();
+          doc.Extension.SaveAs(imgDir + "\\" + tag + nm[i] + ".jpg", 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent | (int)swSaveAsOptions_e.swSaveAsOptions_Copy, null, ref e, ref w);
+        }
+        double[][] rot = { new double[] { -1.1, 0.5 }, new double[] { 1.1, 0.5 }, new double[] { -1.1, -0.5 }, new double[] { 1.1, -0.5 } };
+        for (int i = 0; i < rot.Length; i++) {
+          doc.ShowNamedView2("*Front", 1); ((ModelView)doc.ActiveView).RotateAboutCenter(rot[i][0], rot[i][1]); doc.ViewZoomtofit2(); doc.GraphicsRedraw2();
+          doc.Extension.SaveAs(imgDir + "\\" + tag + "_oblique" + (i + 1) + ".jpg", 0, (int)swSaveAsOptions_e.swSaveAsOptions_Silent | (int)swSaveAsOptions_e.swSaveAsOptions_Copy, null, ref e, ref w);
+        }
+      }
     }
   }
 
@@ -247,6 +267,18 @@ public static class Gen {
     Open(PlaneAt(0, xm));
     foreach (double[] c in yzd) Circle(V(xm, c[0], c[1]), c[2]);
     Feature f = ExtrudeMid(Close(name + " sketch"), Math.Abs(x2 - x1), cut);
+    Name(f, name);
+    return f;
+  }
+  // round cut about an axis along x through (yc, zc): the profile is {x, radius} points in order, closed along the axis
+  static Feature RevCutX(double yc, double zc, double[][] xr, string name) {
+    Open(PlaneAt(2, zc));
+    int n = xr.Length;
+    SketchSegment axis = Ln(V(sgn * xr[n - 1][0], yc, zc), V(sgn * xr[0][0], yc, zc));
+    Ln(V(sgn * xr[0][0], yc, zc), V(sgn * xr[0][0], yc + xr[0][1], zc));
+    for (int i = 0; i + 1 < n; i++) Ln(V(sgn * xr[i][0], yc + xr[i][1], zc), V(sgn * xr[i + 1][0], yc + xr[i + 1][1], zc));
+    Ln(V(sgn * xr[n - 1][0], yc + xr[n - 1][1], zc), V(sgn * xr[n - 1][0], yc, zc));
+    Feature f = Revolve(Close(name + " sketch"), axis, false, true);
     Name(f, name);
     return f;
   }
@@ -390,11 +422,17 @@ public static class Gen {
     PZ(ell, a.zLip, a.zTop, false, "lip");
     // M3 heat-set inserts, in from the outside face: along the build direction of the print, the good way for an insert
     double sp = p("brkScrewSpan") / 2;
-    CX(new double[][] { new double[] { a.yi - sp, a.zScrew, p("pilotD") }, new double[] { a.yi + sp, a.zScrew, p("pilotD") } },
-      a.bumpX - p("pilotDepth"), a.bumpX + 1, true, "insert holes");
-    { double fd = p("insHoleFinishD"), wall = Math.Min(a.zScrew - fd / 2 - a.zRearOut, a.zSeat - a.zScrew - fd / 2);
-      log.AppendLine(String.Format("  insert holes: modelled {0:F1} dia x {1:F1} deep, finish to {2:F1}; {3:F2} of plastic front and back of the hole; {4:F1} beyond the hole end",
-        p("pilotD"), p("pilotDepth"), fd, wall, a.bumpX - p("pilotDepth") - a.tipX));
+    // The hole is TAPERED to match the insert (8 deg included) and prints to size: no drilling. insHoleBotD is the diameter at the
+    // depth of the insert's narrow end (McMaster's "hole" figure), the mouth is wider by the taper over the insert length, then a
+    // short straight pocket below for the melt. A 45 deg chamfer on the mouth takes the first-layer squash (the mouth is on the bed).
+    { double il = p("insLen"), rb = p("insHoleBotD") / 2, tn = Math.Tan(p("insTaperDeg") / 2 * Math.PI / 180), rt = rb + il * tn, mc = p("insMouthCham"), dp = p("pilotDepth");
+      double[][] prof = { new double[] { a.bumpX + 1, rt - mc * tn + mc + 1 }, new double[] { a.bumpX - mc, rt - mc * tn }, new double[] { a.bumpX - il, rb }, new double[] { a.bumpX - dp, rb } };
+      RevCutX(a.yi - sp, a.zScrew, prof, "insert hole 1");
+      RevCutX(a.yi + sp, a.zScrew, prof, "insert hole 2");
+      double wall = Math.Min(a.zScrew - rt - a.zRearOut, a.zSeat - a.zScrew - rt);
+      log.AppendLine(String.Format("  insert holes: tapered {0:F1} deg, {1:F2} dia at the mouth to {2:F2} at {3:F1} deep, then straight to {4:F1}; mouth chamfer {5:F1}; print to size, no drilling",
+        p("insTaperDeg"), 2 * rt, 2 * rb, il, dp, mc));
+      log.AppendLine(String.Format("  insert holes: {0:F2} of plastic front and back at the mouth; {1:F1} beyond the hole end", wall, a.bumpX - dp - a.tipX));
       if (wall < 2.3) log.AppendLine("  !! under 2.3 mm of plastic beside the insert holes");
       if (p("pilotDepth") < p("insLen") + 1.0) log.AppendLine("  !! insert hole under 1 mm deeper than the insert");
       if (a.bumpX - p("pilotDepth") < a.tipX + 2) log.AppendLine("  !! insert hole nearly through the block");
@@ -406,7 +444,14 @@ public static class Gen {
       // bed side and runs into the radius (chamfer 0.586 R, then R on its upper edge: the arc ends R from the corner).
       ChamE(cc, "bumper corner, bed side", V(a.bumpX, a.bumpY, zm));
       Fil(rc, "bumper corner", V(a.bumpX - cc, a.bumpY, zm));
-      Fil(p("rimInR"), "inside corner of the web", V(a.webInX, a.webInY, (a.zSeat + a.zLip) / 2));
+      // Sheet corner relief. This corner used to carry a fillet (rimInR): the sharp tip of the sheet rode up on it and stopped the
+      // cap about 0.3 short of the sheet edges, with the tip jammed and no room to grow. Now a round pocket centred on the corner,
+      // the height of the sheet slot only, so the cap can seat on both edges and the tip touches nothing.
+      { double rr = p("sheetReliefR"), lig = (a.bumpX - a.webInX) * Math.Sqrt(2) - rc * (Math.Sqrt(2) - 1) - rr;
+        Cyls(new double[][] { new double[] { sgn * a.webInX, a.webInY, 2 * rr } }, a.zSeat, a.zLip, true, "sheet corner relief");
+        log.AppendLine(String.Format("  sheet corner relief: R {0:F1} round pocket on the inside corner of the web, slot height only; tip of the sheet {1:F2} from its wall as designed, {0:F1} with the cap hard on both edges; about {2:F1} of web left on the diagonal",
+          rr, Math.Sqrt(p("edgeW") * p("edgeW") + p("edgeL") * p("edgeL")) + rr, lig));
+        if (lig < 1.8) log.AppendLine("  !! under 1.8 mm of web left behind the sheet corner relief"); }
       Fil(p("revealR"), "reveal corner", V(a.tipX, a.tipY, (a.zLip + a.zTop) / 2));
       Fil(p("revealR"), "body inside corner", V(a.tipX, a.tipY, (a.zRearOut + a.zSeat) / 2));
       ChamE(1.5, "arm ends", V(a.bumpX, a.ys, zm), V(a.xe, a.bumpY, zm));
@@ -466,6 +511,12 @@ public static class Gen {
       log.AppendLine(String.Format("  screw head relief margins: along length {0:F1}, toward bend {1:F1}, toward front {2:F1}, depth {3:F1}", m1, m2, m3, m4));
       if (m1 < 1 || m2 < 1.5 || m3 < 1.5 || m4 < 0.5) log.AppendLine("  !! screw head relief is too tight");
       if (p("relZfar") > sf - 2) log.AppendLine("  !! relief runs into the bend"); }
+    // The lens frame of the fixture laps back over the side flat and over the end, stripT proud (test print, Nov 24:
+    // the leg sat on the lap and held the pad off the angled face). Step the inside of the leg clear of it.
+    double stX = p("stripT") + p("stripClr"), stZ = -(p("stripW") + p("stripBack")), endRelY = p("stripT") + p("endHeadH") + p("endRelClr");
+    if (!footMode) PY(Rect(-1, stZ, stX, zJ + stX), y1 - 1, y2 + 1, true, "lens frame relief, side");
+    log.AppendLine(String.Format("  lens frame lap: {0:F1} proud, taken as {1:F0} wide; leg stepped to x {2:F1} from z {3:F0} forward ({4:F1} clear); leg {5:F1} thick there",
+      p("stripT"), p("stripW"), stX, stZ, p("stripClr"), xo - stX));
     // M6 slot through the pad, long axis down the slope, and a relief for the flange of the insert
     double hs = p("m6Slot") / 2, r = p("m6Clr") / 2;
     RevCutY(a.yi, a.cX - 1.0 * a.nX, a.cZ - 1.0 * a.nZ, a.nX, a.nZ, 1.0 + p("flangeRelDepth"), p("flangeRelD") / 2, "insert flange relief");
@@ -502,6 +553,36 @@ public static class Gen {
         new double[] { ex + tp * a.nX, ez + tp * a.nZ }, new double[] { ex + fc * a.nX, ez + fc * a.nZ } }, y2 - 0.5, yTop + 0.5, false, "foot leg");
       PY(Rect(xIn, zRear, xo, zStep), yTop, yBot, false, "sole under the housing");
       PY(Rect(xIn, zStep - 0.5, xo, zFwd), yThin, yBot, false, "sole under the block");
+      // ---- from the first test print of the foot (Nov 24)
+      // The M6 is on the angled face, so its axis lies in the plane of the housing end. Nothing but friction stopped
+      // the foot swivelling about it, and the housing end did not touch the sole at all (it stood on one screw head).
+      // TAB: the sole carried in under the housing end, toward the centre line of the lamp, across the M6 axis.
+      double xT = xIn - p("footTabIn"), zT1 = -p("footTabZ1"), zT2 = -p("footTabZ2");
+      PY(Rect(xT, zT1, xIn + 1, zT2), yTop, yBot, false, "sole tab under the housing");
+      // LANDS: two raised pads that touch the END of the housing (y = 0), one each side of the M6 axis. Whichever way
+      // the foot tries to swivel, one of them is driven into the end of the housing. They also carry the weight,
+      // straight down through the sole, and set the foot's height: push up until both touch, then tighten.
+      double[][] lands = new double[][] { new double[] { p("landAx0"), p("landAz0"), p("landAx1"), p("landAz1") }, new double[] { p("landBx0"), p("landBz0"), p("landBx1"), p("landBz1") } };
+      PY(Rect(lands[0][0], lands[0][1], lands[0][2], lands[0][3]), 0, yTop + 0.5, false, "land A");
+      PY(Rect(lands[1][0], lands[1][1], lands[1][2], lands[1][3]), 0, yTop + 0.5, false, "land B");
+      // RELIEFS for the lens frame lap, on the side and on the end, and for the screw through it at the corner of the end
+      PY(Rect(-1, stZ, stX, zJ + stX), y1 - 1, endRelY, true, "lens frame relief, side");
+      PY(Rect(xIn - 1, stZ, stX, zStep + 0.5), yTop - 1, endRelY, true, "lens frame and corner screw relief, end");
+      { double[] lev = new double[2];
+        for (int i = 0; i < 2; i++) {
+          double lx = (lands[i][0] + lands[i][2]) / 2, lz = (lands[i][1] + lands[i][3]) / 2;
+          lev[i] = -a.nZ * (lx - a.cX) + a.nX * (lz - a.cZ);
+          foreach (double cx in new double[] { lands[i][0], lands[i][2] }) foreach (double cz in new double[] { lands[i][1], lands[i][3] }) {
+            double edge = cz < -sf ? (cz + sf) * a.dX / a.dZ : 0;
+            if (cx > edge - 2 || cz < -p("lightWingDepth") + 2 || cz > stZ - 1) log.AppendLine(String.Format("  !! land {0} corner at x {1:F0}, z {2:F0} is off the flat of the housing end", i == 0 ? "A" : "B", cx, cz));
+          }
+          if (i == 1 && (lands[i][0] < xT + 3 || lands[i][1] < zT1 + 3 || lands[i][3] > zT2 - 3)) log.AppendLine("  !! land B is at the edge of the tab");
+        }
+        log.AppendLine(String.Format("  anti-swivel: land A bears on the housing end {0:F0} mm one side of the M6 axis, land B {1:F0} mm the other side; tab reaches x {2:F0}, z {3:F0}..{4:F0}",
+          lev[0], -lev[1], xT, zT1, zT2));
+        if (lev[0] * lev[1] > 0 || Math.Abs(lev[0]) < 10 || Math.Abs(lev[1]) < 10) log.AppendLine("  !! lands do not straddle the M6 axis by 10 mm each");
+        log.AppendLine(String.Format("  end relief: sole top dropped to {0:F1} below the housing end from z {1:F0} forward; the corner screw head stands {2:F1} proud there (lap {3:F1} + head {4:F1})",
+          endRelY, stZ, p("stripT") + p("endHeadH"), p("stripT"), p("endHeadH"))); }
       // toe: the sole simply runs on footFwd in front of the cap at the same level; its front top edge is rounded off below
       // 45 deg gusset under the part of the leg that sits in the block seat, outside the bumper face of the block
       double gx = a.bumpX + 0.4, gz = a.zLeg - (yThin - y2);
@@ -558,7 +639,7 @@ public static class Gen {
       log.AppendLine(String.Format("  M6 line of sight: tool axis crosses the brace at z {0:F0}; brace top held {1:F0} below the axis from z {2:F0} back to the tail", zLos, tR, zC));
       // everything below the table plane comes off: this face is the bed face of the print
       PX(new double[][] { new double[] { Yb(zRear - 5), zRear - 5 }, new double[] { Yb(zFwd + 5), zFwd + 5 }, new double[] { yBot + 5, zFwd + 5 }, new double[] { yBot + 5, zRear - 5 } },
-        xIn - 5, xo + 5, true, "table plane");
+        xT - 5, xo + 5, true, "table plane");
       // the side screw-head relief carried through to the end
       PX(Rect(y2 - p("relLen"), -p("relZfar"), yTop - 0.2, -p("relZnear")), -1, sc + p("relDepth"), true, "screw head relief to the end");
       double thin = Yb(zStep) - yThin, wS = xo - xIn;
@@ -595,6 +676,9 @@ public static class Gen {
         double s0 = (bx0 - a.cX) / a.nX, zC = a.cZ + s0 * a.nZ + p("toolR") / Math.Abs(a.nX), yCut = a.yi + p("toolR"), zW = zO2 + 1;
         Fil(rT, "sole tail corners", V(xo, yTop + 2, zRear), V(xIn, yTop + 2, zRear));
         Fil(p("footFrontR"), "sole front corners", V(xo, Yb(zFwd) - 3, zFwd), V(xIn, Yb(zFwd) - 3, zFwd));
+        { double xT = xIn - p("footTabIn"), zT1 = -p("footTabZ1"), zT2 = -p("footTabZ2");
+          Fil(p("footTabR"), "tab corners", V(xT, yTop + 2, zT1), V(xT, yTop + 2, zT2));
+          Fil(3, "tab roots", V(xIn, yTop + 2, zT1), V(xIn, yTop + 2, zT2)); }
         Fil(p("braceKinkR"), "brace kink", V((bx0 + xo) / 2, yCut, zC));
         Fil(rv, "brace top corner", V((bx0 + xo) / 2, y1, zW - 6));
         Fil(p("insideR"), "inside corner of the foot leg", V(fc + 0.3, (y2 + yTop) / 2, fz));
@@ -604,7 +688,7 @@ public static class Gen {
         Cham(p("bedCham"), "bed face chamfer", V(xIn + 15, Yb(zRear + 40), zRear + 40));
       } else {
         // bed-face edges, chained along tangents; the small relief arc at the inside of the bend is left as it is
-        ChamC(p("bedChamSmall"), "bed face chamfer", V(xo, y1, 0), V(sc, y1, -10), V(a.jog, y1, a.zLeg - 6),
+        ChamC(p("bedChamSmall"), "bed face chamfer", V(xo, y1, 0), V(sc, y1, -22), V(stX, y1, -5), V(a.jog, y1, a.zLeg - 6),
           V(ex / 2 + tp * a.nX, y1, (ez - sf) / 2 + tp * a.nZ), V(ex / 2, y1, (ez - sf) / 2));
         FilC(re, "top face edge", V(xo, y2, 0));
         double left = Math.Sqrt((xo - sc) * (xo - sc) + (zO2 + sf) * (zO2 + sf)) - p("cornerRelBack") - p("cornerRelR") - 0.147 * p("bendOutR");
@@ -632,6 +716,11 @@ public static class Gen {
       new double[] { a.tipY, a.zf }, new double[] { a.webInY, a.zf }, new double[] { a.webInY, a.zRearIn }, new double[] { a.tipY, a.zRearIn } },
       far, a.xe, false, "end channel");
     CX(new double[][] { new double[] { -p("headFromEnd"), -p("headBack"), p("headD") } }, -1, p("headH"), false, "side screw head");
+    { double st = p("stripT"), sw2 = p("stripW");
+      PY(Rect(far, -sw2, st, 0), far, st, false, "lens frame lap");
+      List<double[]> ring = new List<double[]>();
+      for (int i = 0; i < 20; i++) ring.Add(new double[] { -p("cornerScrewX") + p("cornerScrewD") / 2 * Math.Cos(i * Math.PI / 10), -p("cornerScrewZ") + p("cornerScrewD") / 2 * Math.Sin(i * Math.PI / 10) });
+      PY(ring.ToArray(), -1, st + p("endHeadH"), false, "corner screw head on the end"); }
     RevCutYAdd(a.yi, a.cX - 1.0 * a.nX, a.cZ - 1.0 * a.nZ, a.nX, a.nZ, 1.0 + p("insFlangeH"), p("insFlangeD") / 2, "insert flange");
     Finish(path, "lb_mock_corner", 0.75, 0.75, 0.75, imgDir, "*Isometric", 7);
   }
@@ -660,9 +749,16 @@ public static class Gen {
   static void BuildHousing(string path, string imgDir) {
     if (!OpenOrNew(path)) return;
     Lay a = L(); sgn = 1;
-    double W2 = p("lightW") / 2, L2 = p("lightL") / 2, sf = p("lightSideFlat"), wd = p("lightWingDepth"), run = -p("lightSlopeLen") * a.dX, cw = p("lightChanW") / 2, H = p("lightH");
-    PY(new double[][] { new double[] { W2, 0 }, new double[] { W2, -sf }, new double[] { W2 - run, -wd }, new double[] { cw, -wd }, new double[] { cw, -H }, new double[] { -cw, -H },
+    double W2 = p("lightW") / 2, L2 = p("lightL") / 2, sf = p("lightSideFlat"), wd = p("lightWingDepth"), run = -p("lightSlopeLen") * a.dX, cw = p("sdChanW") / 2, H = p("lightH");
+    // driver channel: body sdChanW wide (measured Nov 24), lid sdLidW wide with a skirt, top of the lid at z = -H. (lightChanW is the same width from the Nov 23 sketch: 3.32 in, first misread as 3.92. Not used; sdLidW is the caliper reading.)
+    // Hanger hardware as one block, taken as centred on the length.
+    double lw = p("sdLidW") / 2, zs = -(H - p("sdSkirtH")), jw = lw - p("sdJunkIn");
+    PY(new double[][] { new double[] { W2, 0 }, new double[] { W2, -sf }, new double[] { W2 - run, -wd }, new double[] { cw, -wd }, new double[] { cw, zs }, new double[] { lw, zs }, new double[] { lw, -H },
+      new double[] { -lw, -H }, new double[] { -lw, zs }, new double[] { -cw, zs },
       new double[] { -cw, -wd }, new double[] { -(W2 - run), -wd }, new double[] { -W2, -sf }, new double[] { -W2, 0 } }, -L2, L2, false, "housing");
+    PY(new double[][] { new double[] { jw, -H + 0.5 }, new double[] { jw, -H - p("sdJunkH") }, new double[] { -jw, -H - p("sdJunkH") }, new double[] { -jw, -H + 0.5 } },
+      p("sdHandleY") - p("sdJunkLen") / 2, p("sdHandleY") + p("sdJunkLen") / 2, false, "hanger hardware");
+    log.AppendLine(String.Format("  housing: driver channel body {0:F1} wide, lid {1:F1} wide, lid top {2:F0} behind the front edge; wing to lid top {3:F1}", 2 * cw, 2 * lw, H, H - wd));
     Finish(path, "lb_housing", 0.86, 0.86, 0.84, imgDir, "*Isometric", 7);
   }
   static void BuildDiffuser(string path, string imgDir) {
@@ -770,14 +866,21 @@ public static class Gen {
     }
     {
       AssemblyDoc asm3 = (AssemblyDoc)adoc; int have = 0; object[] comps = (object[])asm3.GetComponents(true);
-      if (comps != null) foreach (object o in comps) if (((Component2)o).Name2.StartsWith("lb_handle")) have++;
-      if (have == 0 && System.IO.File.Exists(dir + SEP + "lb_handle_A.SLDPRT")) {
-        Place(asm3, adoc, dir + SEP + "lb_handle_A.SLDPRT", Xf(I, W2, L2, 0));
-        Place(asm3, adoc, dir + SEP + "lb_handle_B.SLDPRT", Xf(I, -W2, L2, 0));
-        Place(asm3, adoc, dir + SEP + "lb_handle_bar.SLDPRT", Xf(I, 0, 0, 0));
-        adoc.ClearSelection2(true); adoc.EditRebuild3();
-        log.AppendLine("assembly: handle added");
+      // The two-cheek handle of Nov 23 (lb_handle_A, _B, _bar) is superseded: take it out if it is there.
+      int gone = 0;
+      if (comps != null) foreach (object o in comps) {
+        Component2 c = (Component2)o; string nm = c.Name2;
+        if (nm.StartsWith("lb_handle")) { adoc.ClearSelection2(true); c.Select4(false, null, false); if (adoc.Extension.DeleteSelection2(0)) gone++; else log.AppendLine("  !! could not remove " + nm); }
+        if (nm.StartsWith("lb_saddle_handle")) have++;
       }
+      if (gone > 0) log.AppendLine("assembly: old two-cheek handle removed (" + gone + " components)");
+      // Saddle handle: its x runs along the channel (global Y), its y across (global X), its z away from the lamp (global -Z);
+      // its origin is on top of the lid, midway between the four inserts.
+      if (have == 0) {
+        Place(asm3, adoc, dir + SEP + "lb_saddle_handle.SLDPRT", Xf(new double[] { 0, 1, 0, 1, 0, 0, 0, 0, -1 }, 0, p("sdHandleY"), -p("lightH")));
+        log.AppendLine("assembly: saddle handle added, " + p("sdHandleY").ToString("F0") + " from the middle of the length (ASSUMED; the insert position along the lamp has not been measured)");
+      } else log.AppendLine("assembly: saddle handle already in it");
+      adoc.ClearSelection2(true); adoc.EditRebuild3();
     }
     if (imgDir != "") {
       try { ((ModelView)adoc.ActiveView).FrameState = (int)swWindowState_e.swWindowMaximized; } catch (Exception) { }   // a reopened assembly comes up in a small window
@@ -840,6 +943,167 @@ public static class Gen {
     double xo = a.jog + p("brkT"), half = p("lightW") / 2 + xo + p("cheekT") - p("socketFloor") - p("barEndClr");
     CX(new double[][] { new double[] { p("lightL") / 2 + p("handleUp"), p("handleZ"), p("gripD") } }, -half, half, false, "bar");   // stand-in, global frame
     Finish(path, "lb_handle_bar", 0.72, 0.6, 0.42, imgDir, "*Isometric", 7);
+  }
+
+  // ---------------------------------------------------------------- saddle handle on the back of the driver channel (Nov 24)
+  // One printed piece. A saddle sits on the channel lid, over the hanger plate and its hardware, with a leg down each
+  // side to the two M6 inserts there (four screws). A bail of round bar stands on the saddle; the hand goes through
+  // across the channel. Replaces the two-cheek handle concept above.
+  // Own frame: x along the channel (0 midway between the inserts), y across it (0 on the centre line), z = 0 on the
+  // top of the lid, +z away from the lamp. Prints as modelled, legs on the bed.
+  // The legs do NOT step in under the lid to reach the inserts. Printed this way up a leg bends across its layers,
+  // so nothing asks it to flex: the legs clear the lid by sdLidClr and a washer on each insert takes up the gap.
+  class Sd { public double hl, yi, yo, yr, zr, zt, r, R, xl, xa, zc, xe, zBot, zLip, zi, xs, hf, hw; }
+  static Sd SdL() {
+    Sd s = new Sd();
+    s.hl = p("sdLidW") / 2; s.yi = s.hl + p("sdLidClr"); s.yo = s.yi + p("sdLegT");
+    s.yr = s.hl - p("sdJunkIn") + p("sdJunkSide"); s.zr = p("sdRecessH"); s.zt = s.zr + p("sdRoofT");
+    s.r = p("sdGripD") / 2; s.R = p("sdBendR"); s.xl = p("sdOpenL") / 2 + s.r; s.xa = s.xl - s.R; s.zc = s.zt + p("sdOpenH") + s.r;
+    s.xe = s.xl + s.r + p("sdBaseR") + p("sdEndMargin");
+    s.zi = -p("sdInsDown"); s.zBot = s.zi - p("sdLegBelow"); s.zLip = -p("sdLipH"); s.xs = p("sdInsSpan") / 2;
+    s.hf = s.hl - p("sdInsRecess"); s.hw = s.hl - p("sdLidStep");
+    return s;
+  }
+  // cylinders along y: each entry {x, z, dia}
+  static Feature CY(double[][] xzd, double y1, double y2, bool cut, string name) {
+    double ym = (y1 + y2) / 2;
+    Open(PlaneAt(1, ym));
+    foreach (double[] c in xzd) Circle(V(c[0], ym, c[1]), c[2]);
+    Feature f = ExtrudeMid(Close(name + " sketch"), y2 - y1, cut);
+    Name(f, name);
+    return f;
+  }
+  // slot cut along y: w wide (x), centre (x0, z0), the centre can move fl each way in z
+  static Feature SlotY(double x0, double z0, double w, double fl, double y1, double y2, string name) {
+    double ym = (y1 + y2) / 2, r = w / 2;
+    Open(PlaneAt(1, ym));
+    Ln(V(x0 - r, ym, z0 - fl), V(x0 - r, ym, z0 + fl));
+    CircArcM(V(x0, ym, z0 + fl), V(x0 - r, ym, z0 + fl), V(x0, ym, z0 + fl + r), V(x0 + r, ym, z0 + fl));
+    Ln(V(x0 + r, ym, z0 + fl), V(x0 + r, ym, z0 - fl));
+    CircArcM(V(x0, ym, z0 - fl), V(x0 + r, ym, z0 - fl), V(x0, ym, z0 - fl - r), V(x0 - r, ym, z0 - fl));
+    Feature f = ExtrudeMid(Close(name + " sketch"), y2 - y1, true);
+    Name(f, name);
+    return f;
+  }
+  static double FaceDist(double[] q) {
+    object[] bodies = (object[])((PartDoc)doc).GetBodies2((int)swBodyType_e.swSolidBody, true);
+    double best = 1e9;
+    if (bodies != null) foreach (Body2 bd in bodies) {
+      object[] fs = (object[])bd.GetFaces(); if (fs == null) continue;
+      foreach (object o in fs) {
+        double[] c = (double[])((Face2)o).GetClosestPointOn(q[0] * MM, q[1] * MM, q[2] * MM); if (c == null) continue;
+        double dd = Math.Sqrt((c[0] - q[0] * MM) * (c[0] - q[0] * MM) + (c[1] - q[1] * MM) * (c[1] - q[1] * MM) + (c[2] - q[2] * MM) * (c[2] - q[2] * MM));
+        if (dd < best) best = dd;
+      }
+    }
+    return best / MM;
+  }
+  // quarter of a torus joining the end of the grip bar (at x = xa, centre height zc) to the top of a bail leg.
+  // Which way a blind revolve turns is not something to trust: build it, look for the outside of the bend, flip if it is not there.
+  static void Elbow(double xa, double zc, double R, double d, int side, string name) {
+    double c45 = Math.Sqrt(0.5);
+    for (int attempt = 0; attempt < 2; attempt++) {
+      Open(PlaneAt(0, xa));
+      Circle(V(xa, 0, zc), d);
+      double[] a0 = S(V(xa, -30, zc - R)), a1 = S(V(xa, 30, zc - R));
+      SketchSegment axis = (SketchSegment)doc.SketchManager.CreateCenterLine(a0[0], a0[1], a0[2], a1[0], a1[1], a1[2]);
+      Feature sk = Close(name + " sketch");
+      doc.ClearSelection2(true);
+      sk.Select2(false, 0);
+      SelectData sd = (SelectData)((SelectionMgr)doc.SelectionManager).CreateSelectData();
+      sd.Mark = 16;
+      if (axis != null) axis.Select4(true, sd);
+      Feature f = (Feature)doc.FeatureManager.FeatureRevolve2(true, true, false, false, attempt == 1, false,
+        (int)swEndConditions_e.swEndCondBlind, 0, Math.PI / 2, 0, false, false, 0, 0, 0, 0, 0, true, true, true);
+      if (f == null) { log.AppendLine("  !! " + name + ": revolve returned nothing (attempt " + attempt + ")"); doc.ClearSelection2(true); sk.Select2(false, 0); doc.Extension.DeleteSelection2(0); continue; }
+      double miss = FaceDist(V(xa + side * (R + d / 2) * c45, 0, zc - R + (R + d / 2) * c45));
+      if (miss < 0.05) { f.Name = name; return; }
+      doc.ClearSelection2(true); f.Select2(false, 0);
+      doc.Extension.DeleteSelection2((int)swDeleteSelectionOptions_e.swDelete_Absorbed);
+    }
+    log.AppendLine("  !! " + name + ": could not turn the elbow the right way");
+  }
+  static void BuildSaddle(string path, string imgDir) {
+    if (!OpenOrNew(path)) return;
+    sgn = 1; Sd s = SdL();
+    double lc = p("sdLeadCham");
+    PX(new double[][] { new double[] { s.yo, s.zBot }, new double[] { s.yo, s.zt }, new double[] { -s.yo, s.zt }, new double[] { -s.yo, s.zBot },
+      new double[] { -s.yi - lc, s.zBot }, new double[] { -s.yi, s.zBot + lc }, new double[] { -s.yi, 0 }, new double[] { -s.yr, 0 }, new double[] { -s.yr, s.zr },
+      new double[] { s.yr, s.zr }, new double[] { s.yr, 0 }, new double[] { s.yi, 0 }, new double[] { s.yi, s.zBot + lc }, new double[] { s.yi + lc, s.zBot } }, -s.xe, s.xe, false, "saddle");
+    // legs: full depth only round the inserts, then up a printable slope to a short lip that runs to the ends
+    double Lb = p("sdLegHalf"), run = (s.zLip - s.zBot) / Math.Tan(p("sdSkirtSlope") * Math.PI / 180);
+    foreach (int e in new int[] { 1, -1 })
+      PY(new double[][] { new double[] { e * Lb, s.zBot - 1 }, new double[] { e * Lb, s.zBot }, new double[] { e * (Lb + run), s.zLip }, new double[] { e * (s.xe + 1), s.zLip }, new double[] { e * (s.xe + 1), s.zBot - 1 } },
+        -s.yo - 1, s.yo + 1, true, e > 0 ? "skirt cut +x" : "skirt cut -x");
+    // bail: two round legs, a round grip, and a quarter torus at each corner
+    Cyls(new double[][] { new double[] { s.xl, 0, 2 * s.r }, new double[] { -s.xl, 0, 2 * s.r } }, s.zt - 1, s.zc - s.R, false, "bail legs");
+    CX(new double[][] { new double[] { 0, s.zc, 2 * s.r } }, -s.xa, s.xa, false, "grip bar");
+    Elbow(s.xa, s.zc, s.R, 2 * s.r, 1, "elbow +x");
+    Elbow(-s.xa, s.zc, s.R, 2 * s.r, -1, "elbow -x");
+    SlotY(s.xs, s.zi, p("sdSlotW"), p("sdSlotFloat"), -s.yo - 1, s.yo + 1, "M6 slots +x");
+    SlotY(-s.xs, s.zi, p("sdSlotW"), p("sdSlotFloat"), -s.yo - 1, s.yo + 1, "M6 slots -x");
+    FilC(p("sdBaseR"), "bail base +x", V(s.xl + s.r, 0, s.zt));
+    FilC(p("sdBaseR"), "bail base -x", V(-s.xl - s.r, 0, s.zt));
+    Fil(2.0, "recess corners", V(0, s.yr, s.zr), V(0, -s.yr, s.zr));
+    Fil(1.0, "land corners", V(0, s.yi, 0), V(0, -s.yi, 0));
+    Fil(3.0, "roof corners", V(s.xe, s.yo, 3), V(s.xe, -s.yo, 3), V(-s.xe, s.yo, 3), V(-s.xe, -s.yo, 3));
+    FilC(p("sdEdgeR"), "roof top edge", V(0, s.yo, s.zt));
+    ChamE(p("bedChamSmall"), "bed chamfer", V(0, s.yo, s.zBot), V(0, -s.yo, s.zBot));
+
+    // ---- what the numbers mean
+    double W = p("lampWeightN") + p("frameWeightN"), d = 2 * s.r, wall = 2.6;
+    double Zsolid = Math.PI * d * d * d / 32, Zshell = Math.PI * (Math.Pow(d, 4) - Math.Pow(d - 2 * wall, 4)) / 64 / s.r;
+    log.AppendLine(String.Format("  saddle: {0:F1} long, {1:F1} wide over the legs, {2:F1} tall as printed; top of the grip {3:F1} above the lid", 2 * s.xe, 2 * s.yo, s.zc + s.r - s.zBot, s.zc + s.r));
+    log.AppendLine(String.Format("  hand opening {0:F1} x {1:F1} ({2:F2} x {3:F2} in), top corners R {4:F1}; grip {5:F1} dia, {6:F0} of it straight", p("sdOpenL"), p("sdOpenH"), p("sdOpenL") / 25.4, p("sdOpenH") / 25.4, s.R - s.r, d, 2 * s.xa));
+    log.AppendLine(String.Format("  roof: lands {0:F1} wide on the lid each side; recess {1:F1} wide x {2:F1} high over hardware {3:F1} wide x {4:F1} high ({5:F1} clear above, {6:F1} each side), open at both ends",
+      s.hl - s.yr, 2 * s.yr, s.zr, 2 * (s.hl - p("sdJunkIn")), p("sdJunkH"), s.zr - p("sdJunkH"), p("sdJunkSide")));
+    double gap = p("sdLidClr") + p("sdInsRecess");
+    log.AppendLine(String.Format("  legs: {0:F1} thick, inside faces {1:F2} apart: {2:F1} clear of the lid ({3:F2}) each side, so it drops straight on. No snap, no step.", p("sdLegT"), 2 * s.yi, p("sdLidClr"), 2 * s.hl));
+    log.AppendLine(String.Format("  legs: gap to each insert flange {0:F2}; SPACER WASHER {1:F1} thick on each insert leaves {2:F2}. Each 0.1 left over bends the leg {3:F2} % (across the layers)", gap, p("sdWasherT"), gap - p("sdWasherT"),
+      100 * 3 * p("sdLegT") * 0.1 / (2 * p("sdInsDown") * p("sdInsDown"))));
+    log.AppendLine(String.Format("  screws: M6 slots {0:F1} wide x {1:F1} tall at x +/-{2:F1}, centre {3:F1} below the lid top (measured Nov 25: 0.594 in to the top edge of the flange + half of 0.486), float {4:F1} up and down; {5:F1} of leg below the slot",
+      p("sdSlotW"), p("sdSlotW") + 2 * p("sdSlotFloat"), s.xs, -s.zi, p("sdSlotFloat"), p("sdLegBelow") - p("sdSlotFloat") - p("sdSlotW") / 2));
+    log.AppendLine(String.Format("  screws: leg {0:F1} + spacer washer {1:F1} + washer under the head ~1.6 -> M6 x 16 puts {2:F1} into the insert past its flange face", p("sdLegT"), p("sdWasherT"), 16 - p("sdLegT") - p("sdWasherT") - 1.6));
+    // carried face down: straight pull on the bail
+    double Ls = s.yi + s.yo, cP = d + p("sdBaseR"), be = (s.xe - s.xl) + Ls / 2;
+    double mRoof = W / 2 / 4 * (Ls - cP / 2), sRoof = mRoof / (be * p("sdRoofT") * p("sdRoofT") / 6);
+    double sBar = W * p("sdOpenL") / 4 / Zshell;
+    log.AppendLine(String.Format("  carried face down, {0:F0} N: grip bar {1:F1} MPa (along the strands; shell only, 6 walls); roof between the legs {2:F1} MPa (along the strands); bail legs and saddle legs in plain tension {3:F2} and {4:F2} MPa (across the layers)",
+      W, sBar, sRoof, W / 2 / (Math.PI * s.r * s.r), W / 2 / (2 * Lb * p("sdLegT"))));
+    // lifted by the handle with the lamp standing: the pull is along the bar
+    double hB = s.zc - s.zt, mBase = 0.6 * W * hB / 2, sBase = mBase / Zshell;
+    log.AppendLine(String.Format("  lifted with the lamp standing (pull along the bar): bail leg root {0:F1} MPa ACROSS THE LAYERS at rest, {1:F1} at 3 g (shell only; {2:F1} if solid). The R{3:F0} base fillet is there for this.",
+      sBase, 3 * sBase, mBase / Zsolid, p("sdBaseR")));
+    log.AppendLine(String.Format("  screws at rest: {0:F0} N each if friction is lost; bearing on the slot end {1:F2} MPa", W / 4, W / 4 / (6 * p("sdLegT"))));
+    if (s.zr - p("sdJunkH") < 1.0) log.AppendLine("  !! recess is under 1 mm clear of the hardware on the lid");
+    if (s.hl - s.yr < 6) log.AppendLine("  !! lands under 6 mm wide");
+    if (-s.zBot > p("sdWallDown") - 2) log.AppendLine(String.Format("  !! leg bottom {0:F1} below the lid top, wall taken as {1:F1} tall", -s.zBot, p("sdWallDown")));
+    if (p("sdLegBelow") - p("sdSlotFloat") - p("sdSlotW") / 2 < 5) log.AppendLine("  !! under 5 mm of leg below the slot");
+    if (-s.zi - p("sdSlotFloat") - p("sdWasherD") / 2 < p("sdSkirtH") + 0.5) log.AppendLine("  !! spacer washer would foul the bottom edge of the lid skirt at the top of the float");
+    if (Lb < s.xs + p("sdWasherD") / 2 + 4) log.AppendLine("  !! leg too short for the washers");
+    if (s.R <= s.r + 2) log.AppendLine("  !! bend radius too tight for the bar");
+    if (Math.Abs(gap - p("sdWasherT")) > 0.15) log.AppendLine("  !! spacer washer does not fill the gap to 0.15");
+    saddleViews = true;
+    Finish(path, "lb_saddle_handle", 0.15, 0.2, 0.35, imgDir, "*Isometric", 7);
+    saddleViews = false;
+  }
+  // stand-in for the middle of the driver channel: lid, wall, the four insert flanges with a spacer washer on each,
+  // and one block for the hanger plate and its hardware. For the clash check only.
+  static void BuildChanMock(string path, string imgDir) {
+    if (!OpenOrNew(path)) return;
+    sgn = 1; Sd s = SdL();
+    double ext = 130, fd = p("insFlangeD"), wt = p("sdWasherT"), wod = p("sdWasherD"), jy = s.hl - p("sdJunkIn"), jx = p("sdJunkLen") / 2;
+    PX(Rect(-s.hl, -p("sdSkirtH"), s.hl, 0), -ext, ext, false, "lid");
+    PX(Rect(-s.hw, -p("sdWallDown"), s.hw, -p("sdSkirtH")), -ext, ext, false, "channel wall");
+    PZ(Rect(-jx, -jy, jx, jy), 0, p("sdJunkH"), false, "hanger plate and hardware");
+    double[][] at = new double[][] { new double[] { s.xs, s.zi, fd }, new double[] { -s.xs, s.zi, fd } };
+    double[][] atW = new double[][] { new double[] { s.xs, s.zi, wod }, new double[] { -s.xs, s.zi, wod } };
+    CY(at, s.hw - 1, s.hf, false, "insert flanges +y");
+    CY(at, -s.hf, -s.hw + 1, false, "insert flanges -y");
+    CY(atW, s.hf, s.hf + wt, false, "spacer washers +y");
+    CY(atW, -s.hf - wt, -s.hf, false, "spacer washers -y");
+    log.AppendLine(String.Format("  channel mock: lid {0:F2} wide, skirt {1:F1} (est.), wall {2:F2} wide, flange faces {3:F2} apart, washers out to {4:F2}", 2 * s.hl, p("sdSkirtH"), 2 * s.hw, 2 * s.hf, 2 * (s.hf + wt)));
+    Finish(path, "lb_mock_channel", 0.75, 0.75, 0.75, imgDir, "*Isometric", 7);
   }
 
   // ---------------------------------------------------------------- fit gauge
@@ -914,6 +1178,8 @@ public static class Gen {
       if (what == "handleA") { sgn = 1; BuildHandle(dir + SEP + "lb_handle_A.SLDPRT", imgDir, "lb_handle_A"); }
       if (what == "handleB") { sgn = -1; BuildHandle(dir + SEP + "lb_handle_B.SLDPRT", imgDir, "lb_handle_B"); }
       if (what == "bar") BuildBar(dir + SEP + "lb_handle_bar.SLDPRT", imgDir);
+      if (what == "saddle") BuildSaddle(dir + SEP + "lb_saddle_handle.SLDPRT", imgDir);
+      if (what == "chanMock") BuildChanMock(dir + SEP + "lb_mock_channel.SLDPRT", imgDir);
       if (what == "mock") BuildMock(dir + SEP + "lb_mock_corner.SLDPRT", imgDir);
       if (what == "stl") ExportPrint(dir, stlTag, stlParts.Split(','));
     } catch (Exception ex) { log.AppendLine("!! stopped: " + ex.Message + "\n" + ex.StackTrace); }
