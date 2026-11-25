@@ -1152,3 +1152,7 @@ STATE WHEN PARKED
   inserts are along the lamp (assembly shows the handle at mid-length).
 - For the next build (Robert's own lamp): edgeL / edgeW to 1.75 and regenerate caps, brackets,
   feet and channels together.
+
+2026-11-25, later: Robert set the chop-saw allowance at +/-1.5 mm (anything over a foot in his shop
+is measured with a ruler or tape unless it is on the mill's DRO). Recorded in cad/CLAUDE.md with a
+draft of the tolerancing principles. The planned 1.75 edge allowance for the next build covers it.

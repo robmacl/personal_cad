@@ -77,13 +77,36 @@ crazy with precision.
 - Not a blanket rule: for work projects and machined parts he sometimes holds tighter tolerances.
   Ask or follow the drawing there; this section is about the home one-offs.
 
+### Tolerancing with his processes (a draft of the principles, in Claude's words, for him to edit)
+
+His own description: seat of the pants and cut-and-try. For prototypes, removing material to make
+things fit avoids scrapping a part; but it is nicer when things go together without modification.
+
+1. A fit is only as good as the roughest process in it. A printed part meeting a sawn extrusion is
+   a saw-tolerance joint, however well the print is made.
+2. Decide for each fit which kind it is, and say so in the notes:
+   - CLEARANCE: must go together untouched. Give it a liberal gap and something (a slot, a screw,
+     adhesive, RTV) to take up what is left. This is the default.
+   - FITTED: deliberately left with material to remove at assembly. Use it only where the fit has
+     to be closer than the process can hold, or where a second part would be costly.
+3. Put the error on the side that can be fixed with the tools at hand:
+   - lengths and outside faces: leave long or proud (they can be trimmed or filed);
+   - round holes that a drill can reach: leave small (they can be drilled);
+   - slots, pockets and inside corners: leave BIG. Nobody can file inside a 3 mm slot or a blind
+     corner, so these never get the "leave material" treatment.
+4. One adjustable feature where two uncertain things meet, and know how much of it is used up.
+5. Measured value plus a modest margin, as above; not the datasheet's worst case.
+
 Numbers that came out of the light box, to start from next time:
 
 - A printed slot that something slides into: 0.5 to 0.6 mm of drawn clearance. One drawn at 0.25
   came out at about 0.1 and pinched.
-- Stock he cuts to length on the chop saw: allow +/-2 mm. He calls +/-1 a fairly tight tolerance for
-  that saw, and one channel in four was 1 mm short. A cut length must not be the only thing that
-  sets a clearance; where two pieces must match, they are cut clamped together.
+- Stock he cuts to length on the chop saw: allow +/-1.5 mm (his figure; one channel in four was
+  1 mm short). A cut length must not be the only thing that sets a clearance; where two pieces
+  must match, they are cut clamped together.
+- Anything over a foot is measured with a ruler or tape unless it is on the milling machine's DRO.
+  So a long dimension is known to about a millimetre at best. Get precision from short local
+  features (a tongue, a slot, a seat), never from an overall length.
 - Screw slots: at least +/-1 mm of float in every direction the parts could be off, not only the
   obvious one. Say which washer covers the slot.
 - Count what locates each part. If it is located twice (a land and a screw, a foot and a bracket),
@@ -113,8 +136,9 @@ Numbers that came out of the light box, to start from next time:
 
 - Printer: Bambu X1C, with support-interface filament available. PETG for most parts (plain PETG
   where toughness matters, and anywhere warm); carbon-fibre PLA is on hand.
-- Holes for thread-forming screws are modelled slightly undersize and finished with a drill and
-  stop bushing. That is not his practice for heat-set inserts (see above).
+- He sometimes prints a hole undersize and finishes it with a drill and stop bushing. That is a
+  choice per hole (a "fitted" hole in the sense above), not a rule, and never for heat-set inserts.
+  The earlier blanket rule here came from one SLS nylon part sent out for a small production run.
 - Fasteners he has used here: M3 tapered brass heat-set inserts, M3 and M6 socket head cap screws,
   1/4 in flat washers (a standard M6 washer is only 12 OD).
 - Reference on hand: `3D print/Self-tapping screws for thermoplastics.pdf`.
